@@ -1,0 +1,31 @@
+{
+  "fixture_kind": "synthetic",
+  "source": "arbeitnow",
+  "country": "_global",
+  "records": [
+    {
+      "slug": "synthetic-platform-engineer",
+      "company_name": "Example Remote Limited",
+      "title": "Synthetic Platform Engineer",
+      "description": "Invented Arbeitnow-shaped description for adapter verification.",
+      "remote": true,
+      "url": "https://jobs.example.invalid/arbeitnow/platform-engineer",
+      "tags": ["data", "platform"],
+      "job_types": ["full_time"],
+      "location": "Remote",
+      "created_at": 1767225600
+    },
+    {
+      "slug": "synthetic-bi-analyst",
+      "company_name": "Sample Insights Limited",
+      "title": "Synthetic BI Analyst",
+      "description": "A second invented description containing no captured advert text.",
+      "remote": false,
+      "url": "https://jobs.example.invalid/arbeitnow/bi-analyst",
+      "tags": ["analytics"],
+      "job_types": ["contract"],
+      "location": "Example City",
+      "created_at": 1767312000
+    }
+  ]
+}

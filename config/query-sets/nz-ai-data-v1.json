@@ -1,0 +1,19 @@
+{
+  "id": "nz-ai-data-v1",
+  "country": "nz",
+  "effective_from": "2026-08-10",
+  "results_per_page": 50,
+  "daily_page_budget": 60,
+  "queries": [
+    { "id": "data-analyst", "text": "data analyst", "role_family": "data_analysis_bi" },
+    { "id": "business-intelligence", "text": "business intelligence", "role_family": "data_analysis_bi" },
+    { "id": "analytics-engineer", "text": "analytics engineer", "role_family": "analytics_engineering" },
+    { "id": "data-engineer", "text": "data engineer", "role_family": "data_engineering_architecture" },
+    { "id": "data-architect", "text": "data architect", "role_family": "data_engineering_architecture" },
+    { "id": "data-scientist", "text": "data scientist", "role_family": "data_science" },
+    { "id": "machine-learning-engineer", "text": "machine learning engineer", "role_family": "ml_ai_engineering" },
+    { "id": "artificial-intelligence", "text": "artificial intelligence", "role_family": "ml_ai_engineering" },
+    { "id": "mlops", "text": "mlops", "role_family": "mlops" },
+    { "id": "data-leadership", "text": "head of data", "role_family": "data_leadership" }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "hiring-observatory",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "migrate": "node --env-file=.env scripts/migrate.mjs",
+    "ingest:census": "node --env-file=.env scripts/ingest-query-census.mjs",
+    "verify:public-export": "node scripts/verify-public-export.mjs",
+    "verify:public-history": "node scripts/verify-public-history.mjs",
+    "verify:public": "node scripts/verify-backup-restore-selftest.mjs && node --env-file=.env scripts/verify-stack.mjs && node --env-file=.env scripts/verify-schema.mjs && node --env-file=.env scripts/verify-wall.mjs && node --env-file=.env scripts/verify-error-privacy.mjs && node --env-file=.env scripts/verify-correlation.mjs && node --env-file=.env scripts/verify-default-privileges.mjs && node scripts/verify-adapter.mjs && node scripts/verify-query-set.mjs",
+    "verify:guards": "node --env-file=.env scripts/verify-falsifiability.mjs",
+    "verify:adapters": "node scripts/verify-adapter.mjs",
+    "verify:query-set": "node scripts/verify-query-set.mjs",
+    "scan:secrets": "bash scripts/scan-secrets.sh",
+    "probe:sources": "node scripts/probe-sources.mjs",
+    "probe:adzuna": "node --env-file=.env scripts/probe-adzuna.mjs",
+    "up": "docker compose up -d",
+    "down": "docker compose down"
+  },
+  "dependencies": {
+    "pg": "^8.13.0",
+    "yaml": "^2.9.0"
+  }
+}

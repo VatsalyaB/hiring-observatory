@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+      # pg_dump runs inside the container; this is where its output lands on the host.
+      # Gitignored — dumps must never enter git.
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+# n8n was removed here on 2026-08-09 (D-011). The schedule now lives in GitHub Actions and the raw
+# store is a private git repository, so there is no orchestrator to host and no server to host it
+# on. Postgres remains — locally, as a rebuildable query cache and as the home of the private tier.
+#
+# Recreate with `docker compose up -d --remove-orphans` to drop the leftover container.
+# The orphaned `n8n` database and `n8ndata` volume are harmless and left in place deliberately;
+# removing data is not something to do casually, even worthless data.
+
+volumes:
+  pgdata:

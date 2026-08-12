@@ -1,0 +1,95 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: observatory
+          POSTGRES_DB: observatory
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U observatory"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: exact allowlist and publication boundary
+        run: node scripts/verify-public-export.mjs --tree .
+
+      - run: npm ci
+
+      - name: compose an ephemeral environment
+        run: |
+          {
+            echo "POSTGRES_USER=observatory"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+            echo "POSTGRES_DB=observatory"
+            echo "POSTGRES_HOST=127.0.0.1"
+            echo "POSTGRES_PORT=5432"
+            echo "PUBLISHER_PASSWORD=$(openssl rand -hex 24)"
+          } > .env
+
+      - name: migrations apply to an empty database
+        run: npm run migrate
+
+      - name: verify public code and synthetic fixtures
+        run: npm run verify:public
+
+      - name: guards can fail
+        run: npm run verify:guards
+
+      - name: exhaustive public history boundary
+        run: npm run verify:public-history
+
+      - name: secret scanner self-test
+        run: bash scripts/scan-secrets.sh --self-test
+
+      - name: secret scan, full history
+        run: bash scripts/scan-secrets.sh --history
+
+      - name: no tracked changes left by verification
+        run: git diff --exit-code
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: actionlint
+        uses: docker://rhysd/actionlint:latest
+
+      - name: gitleaks
+        uses: docker://zricethezav/gitleaks:latest
+        with:
+          args: detect --source=/github/workspace --config=/github/workspace/.gitleaks.toml --redact --verbose

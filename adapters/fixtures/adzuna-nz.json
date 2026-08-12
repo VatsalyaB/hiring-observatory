@@ -1,0 +1,52 @@
+{
+  "fixture_kind": "synthetic",
+  "source": "adzuna",
+  "country": "nz",
+  "records": [
+    {
+      "adref": "synthetic-request-token-a",
+      "description": "Invented description for adapter verification only.",
+      "id": "synthetic-adzuna-001",
+      "redirect_url": "https://jobs.example.invalid/adzuna/001",
+      "category": { "label": "IT Jobs", "tag": "it-jobs" },
+      "__CLASS__": "Adzuna::API::Response::Job",
+      "location": { "display_name": "Example City", "area": ["Exampleland", "Example City"] },
+      "contract_time": "full_time",
+      "company": { "display_name": "Example Analytics Limited" },
+      "contract_type": "permanent",
+      "created": "2026-01-01T00:00:00Z",
+      "title": "Synthetic Data Engineer",
+      "salary_is_predicted": "0"
+    },
+    {
+      "adref": "synthetic-request-token-b",
+      "description": "Invented description for adapter verification only.",
+      "id": "synthetic-adzuna-001",
+      "redirect_url": "https://jobs.example.invalid/adzuna/001",
+      "category": { "tag": "it-jobs", "label": "IT Jobs" },
+      "__CLASS__": "Adzuna::API::Response::Job",
+      "location": { "area": ["Exampleland", "Example City"], "display_name": "Example City" },
+      "contract_time": "full_time",
+      "company": { "display_name": "Example Analytics Limited" },
+      "contract_type": "permanent",
+      "created": "2026-01-01T00:00:00Z",
+      "title": "Synthetic Data Engineer",
+      "salary_is_predicted": "0"
+    },
+    {
+      "adref": "synthetic-request-token-c",
+      "description": "Another invented description with no source-derived text.",
+      "id": "synthetic-adzuna-002",
+      "redirect_url": "https://jobs.example.invalid/adzuna/002",
+      "category": { "label": "IT Jobs", "tag": "it-jobs" },
+      "__CLASS__": "Adzuna::API::Response::Job",
+      "location": { "display_name": "Sample Harbour", "area": ["Exampleland", "Sample Harbour"] },
+      "contract_time": "part_time",
+      "company": { "display_name": "Synthetic Systems Limited" },
+      "contract_type": "contract",
+      "created": "2026-01-02T00:00:00Z",
+      "title": "Synthetic Analytics Engineer",
+      "salary_is_predicted": "0"
+    }
+  ]
+}

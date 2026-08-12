@@ -1,0 +1,30 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# Data — raw payloads and dumps stay out of git
+data/
+dumps/
+backups/
+*.dump
+*.sql.gz
+
+# Node
+node_modules/
+npm-debug.log*
+.npm
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local scratch
+scratch/
+.worktrees/
+*.local

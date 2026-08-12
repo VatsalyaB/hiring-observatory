@@ -1,0 +1,35 @@
+{
+  "_comment": [
+    "Ingestion config. Countries live HERE, never in code — invariant 4. Adding New Zealand's",
+    "neighbours is an edit to this file and nothing else, which is the property the whole",
+    "region-agnostic design exists to protect.",
+    "",
+    "This is read by BOTH halves: scripts/ingest-raw.mjs in CI (which has no database) and, later,",
+    "M2's loader locally. One file so the two cannot drift.",
+    "",
+    "`_global` is a pseudo-country for sources that are not country-partitioned, following the same",
+    "underscore convention as raw/_canary. It is deliberately not a real ISO code so it can never be",
+    "mistaken for one or joined against `countries`."
+  ],
+  "sources": [
+    {
+      "id": "arbeitnow",
+      "adapter": "arbeitnow",
+      "countries": ["_global"],
+      "auth": "none",
+      "publishable": true,
+      "note": "VERIFIED 2026-08-09. Keyless, global/EU-heavy, full descriptions. No legal notice attached."
+    },
+    {
+      "id": "adzuna",
+      "adapter": "adzuna",
+      "countries": ["nz", "au", "sg"],
+      "auth": "adzuna",
+      "publishable": true,
+      "category": "it-jobs",
+      "pages": 2,
+      "results_per_page": 50,
+      "note": "VERIFIED 2026-08-09, Q2 closed. `it-jobs` confirmed against /categories, not guessed. Carries salary_is_predicted — never blend with disclosed pay."
+    }
+  ]
+}

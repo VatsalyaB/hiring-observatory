@@ -8,11 +8,11 @@ runtime handoff remain in a separate private repository and are not mirrored her
 
 ## Current state
 
-- The repository was bootstrapped from a file-by-file allowlist with a fresh Git root.
+- The repository was bootstrapped from a 73-file allowlist with a fresh, private-history-free Git root.
 - Public fixtures are synthetic and machine-marked; no captured advert row is included.
-- CI requires no production secrets and reports independent `verify` and `lint` checks.
-- `main` is intended to require pull requests, both checks, conversation resolution, and disabled
-  force pushes and deletion.
+- CI requires no production secrets; its first public run passed independent `verify` and `lint` checks.
+- `main` requires pull requests, both checks, conversation resolution and admin enforcement; force
+  pushes and deletion are disabled.
 - Releases from the private source of truth are manual milestone exports. Automatic mirroring is
   deliberately deferred.
 

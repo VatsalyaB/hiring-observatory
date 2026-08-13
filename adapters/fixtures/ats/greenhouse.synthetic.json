@@ -1,0 +1,28 @@
+{
+  "fixture_kind": "synthetic",
+  "response": {
+    "jobs": [
+      {
+        "id": 1001,
+        "title": "Synthetic Data Role",
+        "updated_at": "2026-08-01T00:00:00Z",
+        "location": { "name": "Aotearoa Test Region" },
+        "absolute_url": "https://example.invalid/jobs/1001",
+        "content": "Invented fixture content.",
+        "departments": [],
+        "offices": []
+      },
+      {
+        "id": 1002,
+        "title": "Synthetic Platform Role",
+        "updated_at": "2026-08-02T00:00:00Z",
+        "location": { "name": "Remote Test Region" },
+        "absolute_url": "https://example.invalid/jobs/1002",
+        "content": "Invented fixture content.",
+        "departments": [],
+        "offices": []
+      }
+    ],
+    "meta": { "total": 2 }
+  }
+}

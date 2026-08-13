@@ -1,0 +1,19 @@
+{
+  "fixture_kind": "synthetic",
+  "response": {
+    "limit": 2,
+    "offset": 2,
+    "totalFound": 3,
+    "content": [
+      {
+        "id": "synthetic-3",
+        "uuid": "00000000-0000-4000-8000-000000000003",
+        "name": "Synthetic Product Role",
+        "company": { "identifier": "example-company", "name": "Example Company" },
+        "location": { "country": "nz", "city": "Test City" },
+        "ref": "https://example.invalid/postings/synthetic-3",
+        "visibility": "PUBLIC"
+      }
+    ]
+  }
+}

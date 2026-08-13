@@ -74,6 +74,21 @@ test('copies only explicit mappings and supports public overlays', async () => {
   assert.deepEqual((await verifyPublicTree({ treeRoot: destinationRoot, mapPath })).files, ['README.md']);
 });
 
+test('fresh public history tracks the aggregate evidence bundle', async () => {
+  const { sourceRoot, destinationRoot, mapPath } = await makeFixture();
+  await write(join(sourceRoot, '.gitignore'), await readFile(resolve('.gitignore'), 'utf8'));
+  await write(join(sourceRoot, 'pilot.json'), '{"schema_version":1}\n');
+  await writeMap(mapPath, [
+    { source: '.gitignore', destination: '.gitignore' },
+    { source: 'pilot.json', destination: 'docs/evidence/data/pilot.json' },
+  ]);
+  await exportPublicTree({ sourceRoot, destinationRoot, mapPath });
+  await git(destinationRoot, 'init', '-b', 'main');
+  await git(destinationRoot, 'add', '--all');
+  const tracked = await git(destinationRoot, 'ls-files', 'docs/evidence/data/pilot.json');
+  assert.equal(tracked.stdout.trim(), 'docs/evidence/data/pilot.json');
+});
+
 test('rejects traversal, absolute paths, and duplicate destinations', async () => {
   const { mapPath } = await makeFixture();
 
@@ -142,6 +157,57 @@ test('rejects production schedules and non-synthetic advert fixtures', async () 
   );
 });
 
+test('rejects ATS operational, private-fixture, registry, and cohort paths', async () => {
+  for (const destination of [
+    'adapters/fixtures/private/greenhouse.json',
+    'config/ats-employers.json',
+    'config/cohorts/nz-ats-2026q4-v1.json',
+  ]) {
+    const fixture = await makeFixture();
+    await write(join(fixture.sourceRoot, 'candidate.json'), '{"fixture_kind":"synthetic"}\n');
+    await writeMap(fixture.mapPath, [{ source: 'candidate.json', destination }]);
+    await assert.rejects(exportPublicTree(fixture), /prohibited public path/i);
+  }
+});
+
+test('requires nested ATS fixtures to be explicitly synthetic', async () => {
+  const fixture = await makeFixture();
+  await write(join(fixture.sourceRoot, 'fixture.json'), '{"jobs":[]}\n');
+  await writeMap(fixture.mapPath, [
+    { source: 'fixture.json', destination: 'adapters/fixtures/ats/greenhouse.json' },
+  ]);
+  await assert.rejects(exportPublicTree(fixture), /fixture_kind.*synthetic/i);
+});
+
+test('rejects unsafe evidence JSON and private repository locator text', async () => {
+  const unsafeEvidence = [
+    { records: [{ id: 'source-row' }] },
+    { source_url: 'https://jobs.example.invalid/board' },
+    {
+      id: 'row-1',
+      title: 'Data Engineer',
+      description: 'Captured source payload',
+      company: 'Example',
+      location: 'Auckland',
+      url: 'https://jobs.example.invalid/row-1',
+    },
+  ];
+  for (const document of unsafeEvidence) {
+    const fixture = await makeFixture();
+    await write(join(fixture.sourceRoot, 'pilot.json'), `${JSON.stringify(document)}\n`);
+    await writeMap(fixture.mapPath, [
+      { source: 'pilot.json', destination: 'docs/evidence/data/pilot.json' },
+    ]);
+    await assert.rejects(exportPublicTree(fixture), /unsafe evidence JSON/i);
+  }
+
+  const locator = await makeFixture();
+  const privateSlug = `hiring-observatory${'-private'}`;
+  await write(join(locator.sourceRoot, 'README.md'), `https://github.com/example/${privateSlug}\n`);
+  await writeMap(locator.mapPath, [{ source: 'README.md', destination: 'README.md' }]);
+  await assert.rejects(exportPublicTree(locator), /private repository locator/i);
+});
+
 test('accepts a fresh public history with one clean root', async () => {
   const repository = await makeRepository();
   await write(join(repository, 'README.md'), '# Public\n');
@@ -177,6 +243,23 @@ test('rejects prohibited paths in deleted historical commits', async () => {
   await commitAll(repository, 'delete raw');
 
   await assert.rejects(verifyPublicHistory(repository), /prohibited historical path.*raw\/source\/2026-08-12\.json/i);
+});
+
+test('rejects deleted ATS cohort paths and unsafe evidence in public history', async () => {
+  const prohibited = await makeRepository();
+  await write(join(prohibited, 'README.md'), '# Public\n');
+  await commitAll(prohibited, 'public root');
+  await write(join(prohibited, 'config', 'cohorts', 'nz-ats-2026q4-v1.json'), '{}\n');
+  await commitAll(prohibited, 'plant cohort');
+  await git(prohibited, 'rm', '-r', 'config/cohorts');
+  await commitAll(prohibited, 'delete cohort');
+  await assert.rejects(verifyPublicHistory(prohibited), /prohibited historical path.*config\/cohorts/i);
+
+  const evidence = await makeRepository();
+  await write(join(evidence, 'README.md'), '# Public\n');
+  await write(join(evidence, 'docs', 'evidence', 'data', 'pilot.json'), '{"jobs":[]}\n');
+  await commitAll(evidence, 'plant source payload');
+  await assert.rejects(verifyPublicHistory(evidence), /unsafe evidence JSON/i);
 });
 
 test('rejects listing-like JSON outside marked synthetic fixtures', async () => {

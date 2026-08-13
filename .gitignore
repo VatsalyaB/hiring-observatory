@@ -8,6 +8,10 @@ credentials.json
 
 # Data — raw payloads and dumps stay out of git
 data/
+!public/docs/evidence/data/
+!public/docs/evidence/data/*.json
+!docs/evidence/data/
+!docs/evidence/data/*.json
 dumps/
 backups/
 *.dump

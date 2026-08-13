@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Aggregate evidence from the Hiring Observatory fixed-quarter ATS employer panel.">
+  <title>Hiring Observatory — Evidence Instrument</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./dashboard.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to evidence</a>
+  <header class="masthead">
+    <p class="eyebrow">Hiring Observatory / Evidence instrument 01</p>
+    <div class="title-lockup">
+      <h1>What can we<br><em>actually</em> observe?</h1>
+      <p class="lede">A fixed-denominator view of public job boards. Complete captures in; unsupported claims out.</p>
+    </div>
+    <div class="instrument-state" id="instrument-state" aria-live="polite">
+      <span class="signal" aria-hidden="true"></span>
+      <span>Loading instrument state…</span>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="readout" aria-labelledby="readout-title">
+      <div class="section-number">01</div>
+      <div>
+        <p class="kicker">Instrument readiness</p>
+        <h2 id="readout-title">Evidence before narrative.</h2>
+      </div>
+      <div class="readout-grid" id="readout-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="composition" aria-labelledby="composition-title">
+      <div class="section-number">02</div>
+      <div class="section-heading">
+        <p class="kicker">Cohort composition</p>
+        <h2 id="composition-title">The denominator, exposed.</h2>
+      </div>
+      <div class="composition-grid">
+        <div>
+          <h3>Provider mix</h3>
+          <div id="provider-composition" class="bar-stack"></div>
+        </div>
+        <div>
+          <h3>Sector mix</h3>
+          <div id="sector-composition" class="bar-stack"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="explorer" aria-labelledby="explorer-title">
+      <div class="section-number">03</div>
+      <div class="section-heading">
+        <p class="kicker">Observable demand</p>
+        <h2 id="explorer-title">Turn the instrument, not the story.</h2>
+      </div>
+      <form class="control-deck" id="filters">
+        <div><label for="period-filter">Period</label><select id="period-filter" name="period"></select></div>
+        <div><label for="provider-filter">Provider</label><select id="provider-filter" name="provider"></select></div>
+        <div><label for="sector-filter">Sector</label><select id="sector-filter" name="sector"></select></div>
+        <div><label for="weighting-filter">Weighting</label><select id="weighting-filter" name="weighting"><option value="listings">Listings</option><option value="employers">Employers</option></select></div>
+      </form>
+      <div class="scope-line" id="scope-line"></div>
+      <div class="primary-gauge" id="primary-gauge" aria-live="polite"></div>
+    </section>
+
+    <section class="insights" aria-labelledby="insights-title">
+      <div class="section-number">04</div>
+      <div class="section-heading"><p class="kicker">Evidence cards</p><h2 id="insights-title">Every sentence has a meter.</h2></div>
+      <div id="insight-grid" class="insight-grid"></div>
+    </section>
+
+    <section class="trend-lock" aria-labelledby="trend-title">
+      <div class="lock-mark" aria-hidden="true">×</div>
+      <div><p class="kicker">Trend gate</p><h2 id="trend-title">Comparison is locked.</h2><p id="trend-reason">Waiting for validated release data.</p></div>
+      <div class="seal" id="trend-seal">NOT ELIGIBLE</div>
+    </section>
+
+    <details class="methodology">
+      <summary>Open methodology drawer <span aria-hidden="true">↘</span></summary>
+      <div class="method-grid">
+        <article><h3>Fixed denominator</h3><p>A named employer cohort stays fixed for the measurement quarter. Membership does not roll silently.</p></article>
+        <article><h3>Complete means complete</h3><p>Every cohort member must have a validated board capture or a qualified valid zero. Missing is never zero.</p></article>
+        <article><h3>Pilot threshold</h3><p>Fewer than 30 qualified employers remains pilot-only. The threshold is not lowered to improve a label.</p></article>
+        <article><h3>Time lock</h3><p>Q4 trend claims remain mechanically ineligible until 1 January 2027 and require comparable complete periods.</p></article>
+      </div>
+    </details>
+  </main>
+
+  <footer><span>Aggregate evidence only</span><span id="release-footnote">Release loading…</span></footer>
+  <div class="error-panel" id="error-panel" role="alert" hidden>Evidence is unavailable. No partial metric has been rendered.</div>
+</body>
+</html>

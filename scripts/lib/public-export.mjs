@@ -43,6 +43,12 @@ export function prohibitedPublicPath(path) {
   if (['.github/workflows/canary.yml', '.github/workflows/ingest.yml'].includes(lower)) {
     return true;
   }
+  if (lower === 'config/ats-employers.json' || lower.startsWith('config/cohorts/')) {
+    return true;
+  }
+  if (lower.startsWith('adapters/fixtures/') && segments.includes('private')) {
+    return true;
+  }
   return /\.(?:dump|backup|bak|sql\.gz|tar\.gz)$/.test(lower);
 }
 
@@ -90,7 +96,7 @@ async function walkFiles(root, current = '') {
 }
 
 async function requireSyntheticFixtures(treeRoot, paths) {
-  for (const path of paths.filter((candidate) => /^adapters\/fixtures\/[^/]+\.json$/i.test(candidate))) {
+  for (const path of paths.filter((candidate) => /^adapters\/fixtures\/.+\.json$/i.test(candidate))) {
     let fixture;
     try {
       fixture = JSON.parse(await readFile(join(treeRoot, ...path.split('/')), 'utf8'));
@@ -99,6 +105,49 @@ async function requireSyntheticFixtures(treeRoot, paths) {
     }
     if (fixture?.fixture_kind !== 'synthetic') {
       throw new Error(`Public fixture must declare fixture_kind "synthetic": ${path}`);
+    }
+  }
+}
+
+function containsUnsafeEvidenceJson(value) {
+  if (Array.isArray(value)) return value.some(containsUnsafeEvidenceJson);
+  if (value == null || typeof value !== 'object') {
+    return typeof value === 'string' && /^https?:\/\//i.test(value);
+  }
+  const keys = Object.keys(value).map((key) => key.toLowerCase());
+  if (keys.some((key) => [
+    'jobs',
+    'jobpostings',
+    'listings',
+    'postings',
+    'records',
+    'results',
+  ].includes(key) || /(?:^|_)url$/.test(key))) {
+    return true;
+  }
+  return containsListingLikeObject(value) || Object.values(value).some(containsUnsafeEvidenceJson);
+}
+
+function containsPrivateRepositoryLocator(content) {
+  return /https?:\/\/github\.com\/[^\s/"']+\/[^\s/"']*private(?:\.git)?\b/i.test(content);
+}
+
+async function inspectPublicContent(treeRoot, paths) {
+  for (const path of paths) {
+    const content = await readFile(join(treeRoot, ...path.split('/')), 'utf8');
+    if (containsPrivateRepositoryLocator(content)) {
+      throw new Error(`Private repository locator found in public file: ${path}`);
+    }
+    if (/^docs\/evidence\/data\/.+\.json$/i.test(path)) {
+      let document;
+      try {
+        document = JSON.parse(content);
+      } catch (error) {
+        throw new Error(`Public evidence JSON is invalid: ${path}: ${error.message}`, { cause: error });
+      }
+      if (containsUnsafeEvidenceJson(document)) {
+        throw new Error(`Unsafe evidence JSON found in public file: ${path}`);
+      }
     }
   }
 }
@@ -117,6 +166,7 @@ export async function verifyPublicTree({ treeRoot, mapPath }) {
   const prohibited = actual.filter(prohibitedPublicPath);
   if (prohibited.length > 0) throw new Error(`Prohibited public path(s): ${prohibited.join(', ')}`);
   await requireSyntheticFixtures(treeRoot, actual);
+  await inspectPublicContent(treeRoot, actual);
   return { files: actual };
 }
 
@@ -156,17 +206,24 @@ export async function verifyPublicHistory(repository) {
     const prohibited = paths.find(prohibitedPublicPath);
     if (prohibited) throw new Error(`Prohibited historical path in ${commit}: ${prohibited}`);
 
-    for (const path of paths.filter((candidate) => candidate.toLowerCase().endsWith('.json'))) {
+    for (const path of paths) {
       const content = await git(repository, ['show', `${commit}:${path}`]);
+      if (containsPrivateRepositoryLocator(content)) {
+        throw new Error(`Private repository locator found in public history ${commit}:${path}`);
+      }
+      if (!path.toLowerCase().endsWith('.json')) continue;
       let document;
       try {
         document = JSON.parse(content);
       } catch (error) {
         throw new Error(`Historical JSON is invalid in ${commit}:${path}: ${error.message}`, { cause: error });
       }
-      const fixture = /^adapters\/fixtures\/[^/]+\.json$/i.test(path);
+      const fixture = /^adapters\/fixtures\/.+\.json$/i.test(path);
       if (fixture && document?.fixture_kind !== 'synthetic') {
         throw new Error(`Historical fixture lacks fixture_kind "synthetic" in ${commit}:${path}`);
+      }
+      if (/^docs\/evidence\/data\/.+\.json$/i.test(path) && containsUnsafeEvidenceJson(document)) {
+        throw new Error(`Unsafe evidence JSON found in public history ${commit}:${path}`);
       }
       if (!fixture && containsListingLikeObject(document)) {
         throw new Error(`Listing-like JSON found outside a synthetic fixture in ${commit}:${path}`);

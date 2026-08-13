@@ -112,9 +112,27 @@ async function verifyAppendOnlyHistory() {
     const cohortModified = commit(cwd, 'modify cohort v1');
     expectBlocked(cwd, 'modifying a committed cohort version', cohortV1, cohortModified);
 
+    await rm(resolve(cwd, 'config/cohorts/v1.json'));
+    const cohortDeleted = commit(cwd, 'delete cohort v1');
+    expectBlocked(cwd, 'deleting a committed cohort version', cohortModified, cohortDeleted);
+
+    await write(cwd, 'config/cohorts/v1.json', '{"version":1}\n');
+    const cohortRestored = commit(cwd, 'restore cohort v1');
+    await rename(resolve(cwd, 'config/cohorts/v1.json'), resolve(cwd, 'config/cohorts/v3.json'));
+    const cohortRenamed = commit(cwd, 'rename cohort v1');
+    expectBlocked(cwd, 'renaming a committed cohort version', cohortRestored, cohortRenamed);
+
+    await write(cwd, 'config/cohorts/v2.json', '{"version":2}\n');
+    const cohortV2 = commit(cwd, 'add successor cohort v2');
+    expectPass(cwd, 'adding a successor cohort version', cohortRenamed, cohortV2);
+
+    await symlink('v2.json', resolve(cwd, 'config/cohorts/v4.json'));
+    const cohortSymlink = commit(cwd, 'add cohort symlink');
+    expectBlocked(cwd, 'adding a cohort version as a symlink', cohortV2, cohortSymlink);
+
     expectInvalid(cwd, 'missing SHAs');
-    expectInvalid(cwd, 'symbolic revision', 'HEAD', cohortModified);
-    expectInvalid(cwd, 'injection-like revision', `${cohortV1};touch-owned`, cohortModified);
+    expectInvalid(cwd, 'symbolic revision', 'HEAD', cohortSymlink);
+    expectInvalid(cwd, 'injection-like revision', `${cohortV1};touch-owned`, cohortSymlink);
   } finally {
     await rm(cwd, { recursive: true, force: true });
   }

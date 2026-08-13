@@ -481,6 +481,23 @@ await test('CLI defaults to the latest real partition and exits zero only when c
   }
 });
 
+await test('CLI ignores the reserved ATS manifest namespace when choosing the latest census partition', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'query-status-cli-ats-namespace-'));
+  try {
+    await writeCensusFixture(root, { complete: true });
+    await writeJson(join(root, 'raw', '_manifests', 'ats', '2026-08-13', 'ats-run.json'), {
+      schema_version: 1,
+      collector: 'ats-employer-panel',
+      partition: '2026-08-13',
+    });
+    const result = await runChild(resolve('scripts/query-census-status.mjs'), { cwd: root });
+    assert.equal(result.code, 0, result.stderr);
+    assert.match(result.stdout, /query census — 2026-08-10/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 await test('CLI fails closed on malformed capture evidence outside active query paths', async () => {
   const root = await mkdtemp(join(tmpdir(), 'query-status-cli-active-paths-'));
   try {

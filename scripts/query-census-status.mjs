@@ -96,6 +96,9 @@ async function indexManifestEvidence(root, index) {
   await walkAttributedEvidence(join(root, 'raw', '_manifests'), ({
     entry, entryPath, artifactPath, pathPartitions, parsed, embeddedPartition, partitions,
   }) => {
+    // ATS manifests have their own schema and validator under a reserved namespace. They are not
+    // query-census evidence and must not create a newer synthetic census partition.
+    if (artifactPath[0] === 'ats') return;
     let evidence = null;
     if (parsed && !parsed.invalid) {
       try {

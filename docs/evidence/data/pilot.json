@@ -1,0 +1,289 @@
+{
+  "schema_version": 1,
+  "release_id": "ats-panel-pilot-2026-08-13",
+  "generated_at": "2026-08-13T00:20:19.237Z",
+  "study": {
+    "id": "nz-fixed-quarter-ats-panel",
+    "cohort_id": "nz-ats-2026q4-v1",
+    "country": "nz",
+    "population": "supported_ats_employer_census",
+    "measurement_start": "2026-10-01",
+    "measurement_end": "2026-12-31"
+  },
+  "readiness": {
+    "state": "pilot_only",
+    "qualified_employers": 3,
+    "target_min": 30,
+    "target_max": 50,
+    "providers": [
+      "ashby",
+      "greenhouse",
+      "smartrecruiters"
+    ]
+  },
+  "periods": [
+    {
+      "id": "pilot-2026-08-13",
+      "label": "pilot 2026-08-13",
+      "phase": "pilot",
+      "start": "2026-08-13",
+      "end": "2026-08-13",
+      "complete_days": 1,
+      "total_days": 1,
+      "cohort_id": "nz-ats-2026q4-v1"
+    }
+  ],
+  "coverage": [
+    {
+      "period_id": "pilot-2026-08-13",
+      "expected_capture_units": 3,
+      "complete_capture_units": 3,
+      "coverage_rate": 1
+    }
+  ],
+  "composition": {
+    "providers": [
+      {
+        "id": "ashby",
+        "employers": 1,
+        "share": 0.3333
+      },
+      {
+        "id": "greenhouse",
+        "employers": 1,
+        "share": 0.3333
+      },
+      {
+        "id": "smartrecruiters",
+        "employers": 1,
+        "share": 0.3333
+      }
+    ],
+    "sectors": [
+      {
+        "id": "technology",
+        "employers": 2,
+        "share": 0.6667
+      },
+      {
+        "id": "utilities",
+        "employers": 1,
+        "share": 0.3333
+      }
+    ]
+  },
+  "demand": [
+    {
+      "metric_id": "demand-pilot-2026-08-13-all-all",
+      "period_id": "pilot-2026-08-13",
+      "provider": "all",
+      "sector": "all",
+      "listing_count": 469
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-all-technology",
+      "period_id": "pilot-2026-08-13",
+      "provider": "all",
+      "sector": "technology",
+      "listing_count": 459
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-all-utilities",
+      "period_id": "pilot-2026-08-13",
+      "provider": "all",
+      "sector": "utilities",
+      "listing_count": 10
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-ashby-all",
+      "period_id": "pilot-2026-08-13",
+      "provider": "ashby",
+      "sector": "all",
+      "listing_count": 238
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-ashby-technology",
+      "period_id": "pilot-2026-08-13",
+      "provider": "ashby",
+      "sector": "technology",
+      "listing_count": 238
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-ashby-utilities",
+      "period_id": "pilot-2026-08-13",
+      "provider": "ashby",
+      "sector": "utilities",
+      "listing_count": 0
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-greenhouse-all",
+      "period_id": "pilot-2026-08-13",
+      "provider": "greenhouse",
+      "sector": "all",
+      "listing_count": 221
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-greenhouse-technology",
+      "period_id": "pilot-2026-08-13",
+      "provider": "greenhouse",
+      "sector": "technology",
+      "listing_count": 221
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-greenhouse-utilities",
+      "period_id": "pilot-2026-08-13",
+      "provider": "greenhouse",
+      "sector": "utilities",
+      "listing_count": 0
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-smartrecruiters-all",
+      "period_id": "pilot-2026-08-13",
+      "provider": "smartrecruiters",
+      "sector": "all",
+      "listing_count": 10
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-smartrecruiters-technology",
+      "period_id": "pilot-2026-08-13",
+      "provider": "smartrecruiters",
+      "sector": "technology",
+      "listing_count": 0
+    },
+    {
+      "metric_id": "demand-pilot-2026-08-13-smartrecruiters-utilities",
+      "period_id": "pilot-2026-08-13",
+      "provider": "smartrecruiters",
+      "sector": "utilities",
+      "listing_count": 10
+    }
+  ],
+  "employer_breadth": [
+    {
+      "metric_id": "breadth-pilot-2026-08-13-all-all",
+      "period_id": "pilot-2026-08-13",
+      "provider": "all",
+      "sector": "all",
+      "eligible_employers": 3,
+      "employers_with_openings": 3,
+      "rate": 1
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-all-technology",
+      "period_id": "pilot-2026-08-13",
+      "provider": "all",
+      "sector": "technology",
+      "eligible_employers": 2,
+      "employers_with_openings": 2,
+      "rate": 1
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-all-utilities",
+      "period_id": "pilot-2026-08-13",
+      "provider": "all",
+      "sector": "utilities",
+      "eligible_employers": 1,
+      "employers_with_openings": 1,
+      "rate": 1
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-ashby-all",
+      "period_id": "pilot-2026-08-13",
+      "provider": "ashby",
+      "sector": "all",
+      "eligible_employers": 1,
+      "employers_with_openings": 1,
+      "rate": 1
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-ashby-technology",
+      "period_id": "pilot-2026-08-13",
+      "provider": "ashby",
+      "sector": "technology",
+      "eligible_employers": 1,
+      "employers_with_openings": 1,
+      "rate": 1
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-ashby-utilities",
+      "period_id": "pilot-2026-08-13",
+      "provider": "ashby",
+      "sector": "utilities",
+      "eligible_employers": 0,
+      "employers_with_openings": 0,
+      "rate": 0
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-greenhouse-all",
+      "period_id": "pilot-2026-08-13",
+      "provider": "greenhouse",
+      "sector": "all",
+      "eligible_employers": 1,
+      "employers_with_openings": 1,
+      "rate": 1
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-greenhouse-technology",
+      "period_id": "pilot-2026-08-13",
+      "provider": "greenhouse",
+      "sector": "technology",
+      "eligible_employers": 1,
+      "employers_with_openings": 1,
+      "rate": 1
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-greenhouse-utilities",
+      "period_id": "pilot-2026-08-13",
+      "provider": "greenhouse",
+      "sector": "utilities",
+      "eligible_employers": 0,
+      "employers_with_openings": 0,
+      "rate": 0
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-smartrecruiters-all",
+      "period_id": "pilot-2026-08-13",
+      "provider": "smartrecruiters",
+      "sector": "all",
+      "eligible_employers": 1,
+      "employers_with_openings": 1,
+      "rate": 1
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-smartrecruiters-technology",
+      "period_id": "pilot-2026-08-13",
+      "provider": "smartrecruiters",
+      "sector": "technology",
+      "eligible_employers": 0,
+      "employers_with_openings": 0,
+      "rate": 0
+    },
+    {
+      "metric_id": "breadth-pilot-2026-08-13-smartrecruiters-utilities",
+      "period_id": "pilot-2026-08-13",
+      "provider": "smartrecruiters",
+      "sector": "utilities",
+      "eligible_employers": 1,
+      "employers_with_openings": 1,
+      "rate": 1
+    }
+  ],
+  "insights": [
+    {
+      "id": "observable-demand",
+      "kind": "level",
+      "metric_id": "demand-pilot-2026-08-13-all-all",
+      "summary": "469 observable vacancies across complete pilot captures."
+    },
+    {
+      "id": "employer-breadth",
+      "kind": "breadth",
+      "metric_id": "breadth-pilot-2026-08-13-all-all",
+      "summary": "3 of 3 cohort employers had observable openings."
+    }
+  ],
+  "trend_gate": {
+    "eligible": false,
+    "reason": "pilot_period"
+  }
+}

@@ -51,6 +51,7 @@ async function candidatePaths(root) {
   for (let index = 0; index < changed.length; index += 2) {
     const status = changed[index];
     const path = changed[index + 1];
+    if (path?.startsWith('raw/_manifests/ats/')) continue;
     if (status !== 'A' || typeof path !== 'string') invalidEvidence();
     candidates.add(path);
   }
@@ -58,6 +59,7 @@ async function candidatePaths(root) {
   for (const path of nulFields(await git(root, [
     'ls-files', '--others', '--exclude-standard', '-z', '--', ...ROOTS,
   ]))) {
+    if (path.startsWith('raw/_manifests/ats/')) continue;
     candidates.add(path);
   }
 

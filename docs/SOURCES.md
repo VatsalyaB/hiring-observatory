@@ -101,6 +101,11 @@ the employer registry changes. That property is what makes geographic expansion 
 | JazzHR / Breezy | UNVERIFIED | Smaller employers. |
 | Workday | UNVERIFIED | Large enterprises. Harder — CXS endpoints, less friendly. High value if cracked, since it covers the big banks and insurers. |
 
+Phase 2 exact-board re-verification on 2026-08-13 produced at least one complete, non-empty,
+recent-NZ-evidence board on each of Greenhouse, Ashby and SmartRecruiters. The named registry,
+provider response fixtures and per-board counts remain private; public releases expose only cohort
+and provider aggregates.
+
 ## Class C — Official statistics (ground truth and calibration)
 
 The credibility layer. Cheap to add, disproportionate payoff — being able to benchmark your

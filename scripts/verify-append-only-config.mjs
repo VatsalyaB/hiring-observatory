@@ -98,6 +98,12 @@ function querySetSnapshot(commit, violations) {
   return { byPath, values };
 }
 
+function cohortSnapshot(commit) {
+  return new Map(treeEntries(commit, ['config/cohorts'], `could not inspect cohorts at ${commit}`)
+    .filter((entry) => entry.path.startsWith('config/cohorts/') && entry.path.endsWith('.json'))
+    .map((entry) => [entry.path, entry]));
+}
+
 function committedEvidence(commit, querySets) {
   if (commit === EMPTY_TREE) return [];
   const countryBySet = new Map(querySets
@@ -176,24 +182,37 @@ for (const commit of introduced) {
     }
     const addedQuerySets = changes.filter(({ status, path }) => status === 'A'
       && path.startsWith('config/query-sets/') && path.endsWith('.json'));
-    if (addedQuerySets.length === 0) continue;
-    currentQuerySets ??= querySetSnapshot(commit, violations);
-    const previousQuerySets = querySetSnapshot(parent, violations);
-    for (const { path } of addedQuerySets) {
-      const entry = currentQuerySets.byPath.get(path);
-      if (!entry || entry.mode !== '100644' || entry.type !== 'blob') {
-        violations.push(`${commit} ${parent}: added query set must be a non-executable JSON blob with Git mode 100644: ${JSON.stringify(path)}`);
-        continue;
+    if (addedQuerySets.length > 0) {
+      currentQuerySets ??= querySetSnapshot(commit, violations);
+      const previousQuerySets = querySetSnapshot(parent, violations);
+      for (const { path } of addedQuerySets) {
+        const entry = currentQuerySets.byPath.get(path);
+        if (!entry || entry.mode !== '100644' || entry.type !== 'blob') {
+          violations.push(`${commit} ${parent}: added query set must be a non-executable JSON blob with Git mode 100644: ${JSON.stringify(path)}`);
+          continue;
+        }
+        if (entry.value !== null) {
+          rejectRetroactiveActivation({
+            commit,
+            parent,
+            added: entry.value,
+            current: currentQuerySets,
+            previous: previousQuerySets,
+            violations,
+          });
+        }
       }
-      if (entry.value !== null) {
-        rejectRetroactiveActivation({
-          commit,
-          parent,
-          added: entry.value,
-          current: currentQuerySets,
-          previous: previousQuerySets,
-          violations,
-        });
+    }
+
+    const addedCohorts = changes.filter(({ status, path }) => status === 'A'
+      && path.startsWith('config/cohorts/') && path.endsWith('.json'));
+    if (addedCohorts.length > 0) {
+      const currentCohorts = cohortSnapshot(commit);
+      for (const { path } of addedCohorts) {
+        const entry = currentCohorts.get(path);
+        if (!entry || entry.mode !== '100644' || entry.type !== 'blob') {
+          violations.push(`${commit} ${parent}: added cohort must be a non-executable JSON blob with Git mode 100644: ${JSON.stringify(path)}`);
+        }
       }
     }
   }

@@ -1,0 +1,28 @@
+{
+  "fixture_kind": "synthetic",
+  "response": {
+    "apiVersion": "1",
+    "jobs": [
+      {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "title": "Synthetic Research Role",
+        "location": "Aotearoa Test Region",
+        "secondaryLocations": [],
+        "isListed": true,
+        "descriptionPlain": "Invented fixture content.",
+        "jobUrl": "https://example.invalid/jobs/one",
+        "applyUrl": "https://example.invalid/apply/one"
+      },
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "title": "Synthetic Systems Role",
+        "location": "Remote Test Region",
+        "secondaryLocations": [],
+        "isListed": true,
+        "descriptionPlain": "Invented fixture content.",
+        "jobUrl": "https://example.invalid/jobs/two",
+        "applyUrl": "https://example.invalid/apply/two"
+      }
+    ]
+  }
+}

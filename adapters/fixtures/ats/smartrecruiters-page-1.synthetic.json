@@ -1,0 +1,28 @@
+{
+  "fixture_kind": "synthetic",
+  "response": {
+    "limit": 2,
+    "offset": 0,
+    "totalFound": 3,
+    "content": [
+      {
+        "id": "synthetic-1",
+        "uuid": "00000000-0000-4000-8000-000000000001",
+        "name": "Synthetic Analytics Role",
+        "company": { "identifier": "example-company", "name": "Example Company" },
+        "location": { "country": "nz", "city": "Test City" },
+        "ref": "https://example.invalid/postings/synthetic-1",
+        "visibility": "PUBLIC"
+      },
+      {
+        "id": "synthetic-2",
+        "uuid": "00000000-0000-4000-8000-000000000002",
+        "name": "Synthetic Engineering Role",
+        "company": { "identifier": "example-company", "name": "Example Company" },
+        "location": { "country": "nz", "city": "Test City" },
+        "ref": "https://example.invalid/postings/synthetic-2",
+        "visibility": "PUBLIC"
+      }
+    ]
+  }
+}

@@ -20,6 +20,9 @@ runtime handoff remain in a separate private repository and are not mirrored her
   coverage. Employer identities and row-level data are absent.
 - `docs/evidence/` is an interactive static view over that aggregate only. Its trend gate is closed
   with reason `pilot_period`; UI state cannot override it.
+- The first natural scheduled collection after the Phase 2 merge completed successfully on
+  2026-08-13. Its operational evidence and row-level captures remain private; this public tree
+  continues to contain only synthetic fixtures, code, methodology and the aggregate pilot release.
 
 ## Evidence boundaries
 

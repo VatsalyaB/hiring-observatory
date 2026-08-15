@@ -9,20 +9,28 @@ The production runtime and collected dataset are held separately in a private re
 job advertisements, production manifests, credentials, database dumps, or scheduled production
 collectors are published here.
 
-## Interactive evidence
+## Evidence state
 
-The [ATS employer-panel evidence instrument](docs/evidence/) is a static, filterable view over one
-closed aggregate JSON release. The current pilot has 3 qualified employers across 3 supported ATS
-providers, 100% capture coverage for one complete pilot day, and 469 observable vacancies. It is
-deliberately marked `pilot_only`: the declared cohort target is 30–50, and no Q4 trend can unlock
-before 2027-01-01 or without two compatible complete periods.
+**Operational acceptance is not publication.** On 2026-08-15, the private runtime's immutable
+45-employer v2 cohort completed a natural scheduled capture at 45/45 with zero failed or missing
+members across the three supported ATS providers. This is a public-safe coverage attestation only:
+no private run identifier, manifest, listing row, employer-linked vacancy fact, or v2 aggregate has
+been copied here.
+
+The [ATS employer-panel evidence instrument](docs/evidence/) remains a static, filterable view over
+the separately approved 3-employer pilot release: 100% capture coverage for one complete pilot day
+and 469 observable vacancies. It remains deliberately marked `pilot_only`. The operational 45/45
+milestone closes cohort expansion; it does not convert this published pilot into a baseline or a
+trend. The next product gate is the locked 100-listing classifier evaluation and a privacy-safe
+baseline release.
 
 ## What the evidence can and cannot say
 
 - A versioned narrow-query result is complete only within the published queries and the source's
   observable results at capture time. It is not a census of all vacancies.
-- The fixed ATS employer panel is a named, versioned cohort. Its current release is a small runtime
-  pilot, not a representative employer sample and not longitudinal evidence.
+- The fixed ATS employer panel is a named, versioned cohort. Its current public artifact is a small
+  pilot; the accepted 45-employer operational cohort has not been published as an aggregate. Neither
+  is a representative employer sample or longitudinal evidence.
 - Broad discovery captures are capped ranked samples. They may describe the composition of the
   captured sample and help discover employers, titles, and query gaps.
 - Broad samples do **not** support market share, market-wide churn, vacancy closure, or vacancy

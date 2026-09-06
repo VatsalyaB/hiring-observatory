@@ -6,14 +6,31 @@ function node(document, selector) { return document.querySelector(selector); }
 function setStatus(document, message) { const status = node(document, '#feedback-status'); if (status) status.textContent = message; }
 function setHidden(document, selector, hidden) { const element = node(document, selector); if (element) element.hidden = hidden; }
 
+function text(document, className, value) {
+  const element = document.createElement('span');
+  element.className = className;
+  element.textContent = value;
+  return element;
+}
+
 function row(document, feedback) {
   const item = document.createElement('li');
-  const state = feedback.status ? ' | Status: ' + feedback.status : '';
+  const meta = document.createElement('div');
+  const tags = document.createElement('div');
+  const comment = document.createElement('p');
   item.className = 'feedback-row';
-  item.textContent = 'Target: ' + feedback.target_type + '/' + feedback.target_key
-    + ' | Submitted: ' + (feedback.created_at?.slice(0, 10) ?? 'unknown')
-    + ' | Reviewer: @' + feedback.github_login + ' | Category: ' + feedback.category
-    + state + ' | Comment: ' + feedback.comment;
+  meta.className = 'feedback-meta';
+  meta.append(
+    text(document, 'feedback-reviewer', 'Reviewer: @' + feedback.github_login),
+    text(document, 'feedback-date', 'Submitted: ' + (feedback.created_at?.slice(0, 10) ?? 'unknown')),
+    text(document, 'feedback-target', 'Target: ' + feedback.target_type + '/' + feedback.target_key),
+  );
+  tags.className = 'feedback-tags';
+  tags.append(text(document, 'feedback-category', 'Category: ' + feedback.category));
+  if (feedback.status) tags.append(text(document, 'feedback-state', 'Status: ' + feedback.status));
+  comment.className = 'feedback-comment';
+  comment.textContent = feedback.comment;
+  item.append(meta, tags, comment);
   return item;
 }
 

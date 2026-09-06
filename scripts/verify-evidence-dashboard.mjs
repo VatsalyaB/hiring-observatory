@@ -130,11 +130,18 @@ test('reviewer feedback is a semantic work area after the engineering proof', as
     '<output id="feedback-characters" for="feedback-comment">',
     '<div id="feedback-status" role="status" aria-live="polite">',
     '<section id="moderation-queue" hidden>',
+    '<div class="feedback-streams">',
+    '<section class="feedback-panel" aria-labelledby="public-feedback-title">',
+    '<section class="feedback-panel" aria-labelledby="your-feedback-title">',
+    '<h3 id="your-feedback-title">Your feedback</h3>',
   ]) assert.ok(html.includes(markup), markup);
   assert.ok(html.indexOf('class="engineering-proof"') < html.indexOf('id="reviewer-feedback"'));
   assert.ok(html.indexOf('id="reviewer-feedback"') < html.indexOf('id="methodology"'));
   assert.match(html, /<script type="module" src="\.\/feedback\.bundle\.js"><\/script>/);
   assert.match(css, /\.feedback-workspace/);
+  assert.match(css, /\.feedback-streams\s*{[^}]*gap:\s*2rem/s);
+  assert.match(css, /\.feedback-panel\s*{[^}]*padding:\s*1\.5rem/s);
+  assert.match(css, /#feedback-form select[\s\S]*?min-height:\s*2\.75rem/);
 });
 
 test('dashboard source has safe missing-data handling and no trend override', async () => {

@@ -622,25 +622,42 @@ button:disabled {
 
 .feedback-workspace {
   display: grid;
-  grid-template-columns: minmax(16rem, 1fr) minmax(16rem, 1fr);
-  gap: clamp(2rem, 6vw, 6rem);
-  margin-top: 1.5rem;
+  grid-template-columns: minmax(18rem, .85fr) minmax(22rem, 1.15fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+  margin-top: 2rem;
 }
 
-#feedback-form,
+#feedback-form {
+  display: grid;
+  gap: .75rem;
+  align-content: start;
+  margin: 0;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.feedback-streams {
+  display: grid;
+  gap: 2rem;
+}
+
+.feedback-panel {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.feedback-panel h3,
+#moderation-queue h3 { margin: 0 0 1rem; }
+
 #public-feedback-list,
 #your-feedback-list,
 #moderation-feedback-list {
   margin: 0;
   padding: 0;
   border-top: 2px solid var(--ink);
-}
-
-#feedback-form {
-  display: grid;
-  gap: .65rem;
-  align-content: start;
-  padding-top: 1rem;
 }
 
 #feedback-form p {
@@ -660,6 +677,8 @@ button:disabled {
   font: 1rem/1.4 var(--sans);
 }
 
+#feedback-form select { min-height: 2.75rem; }
+
 #feedback-form textarea,
 .moderation-note {
   min-height: 7rem;
@@ -672,17 +691,64 @@ button:disabled {
 }
 
 .feedback-row {
-  padding: 1rem 0;
+  display: grid;
+  gap: .75rem;
+  padding: 1.25rem 0;
   border-bottom: 1px solid var(--line);
+  list-style: none;
+}
+
+.feedback-meta,
+.feedback-tags {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.feedback-meta {
+  gap: .5rem 1.25rem;
+  color: var(--muted);
+  font: .72rem/1.5 var(--mono);
+}
+
+.feedback-tags { gap: .5rem; }
+
+.feedback-category,
+.feedback-state {
+  padding: .2rem .45rem;
+  border: 1px solid var(--line);
+  font: 700 .68rem/1.4 var(--mono);
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.feedback-comment {
+  margin: 0;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
+  font: 1rem/1.55 var(--sans);
 }
 
 #moderation-queue {
-  margin-top: 2rem;
-  padding: 1.5rem 0 0;
-  border-top: 2px solid var(--ink);
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+#moderation-feedback-list .feedback-row {
+  grid-template-columns: repeat(2, max-content);
+}
+
+#moderation-feedback-list .feedback-meta,
+#moderation-feedback-list .feedback-tags,
+#moderation-feedback-list .feedback-comment,
+#moderation-feedback-list .moderation-note {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 800px) {
   .feedback-workspace { grid-template-columns: 1fr; }
+  #feedback-form,
+  .feedback-panel,
+  #moderation-queue { padding: 1rem; }
 }

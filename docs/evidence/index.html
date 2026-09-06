@@ -142,11 +142,15 @@
           <output id="feedback-characters" for="feedback-comment">2,000 characters remaining</output>
           <button id="feedback-submit" type="submit">Submit for review</button>
         </form>
-        <div>
-          <h3>Public feedback</h3>
-          <ul id="public-feedback-list"></ul>
-          <h3>Your feedback</h3>
-          <ul id="your-feedback-list"></ul>
+        <div class="feedback-streams">
+          <section class="feedback-panel" aria-labelledby="public-feedback-title">
+            <h3 id="public-feedback-title">Public feedback</h3>
+            <ul id="public-feedback-list"></ul>
+          </section>
+          <section class="feedback-panel" aria-labelledby="your-feedback-title">
+            <h3 id="your-feedback-title">Your feedback</h3>
+            <ul id="your-feedback-list"></ul>
+          </section>
         </div>
       </div>
       <section id="moderation-queue" hidden>

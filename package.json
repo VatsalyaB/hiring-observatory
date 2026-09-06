@@ -11,7 +11,8 @@
     "ingest:census": "node --env-file=.env scripts/ingest-query-census.mjs",
     "verify:public-export": "node scripts/verify-public-export.mjs",
     "verify:public-history": "node scripts/verify-public-history.mjs",
-    "verify:public": "node scripts/verify-backup-restore-selftest.mjs && node --env-file=.env scripts/verify-stack.mjs && node --env-file=.env scripts/verify-schema.mjs && node --env-file=.env scripts/verify-wall.mjs && node --env-file=.env scripts/verify-error-privacy.mjs && node --env-file=.env scripts/verify-correlation.mjs && node --env-file=.env scripts/verify-default-privileges.mjs && node scripts/verify-adapter.mjs && node scripts/verify-query-set.mjs && node scripts/verify-ats-adapters.mjs && node scripts/verify-panel-release.mjs && node scripts/verify-evidence-dashboard.mjs",
+    "verify:reviewer-feedback-schema": "node --env-file=.env scripts/verify-reviewer-feedback-schema.mjs",
+    "verify:public": "node scripts/verify-backup-restore-selftest.mjs && node --env-file=.env scripts/verify-stack.mjs && node --env-file=.env scripts/verify-schema.mjs && node --env-file=.env scripts/verify-wall.mjs && node --env-file=.env scripts/verify-error-privacy.mjs && node --env-file=.env scripts/verify-correlation.mjs && node --env-file=.env scripts/verify-default-privileges.mjs && node scripts/verify-adapter.mjs && node scripts/verify-query-set.mjs && node scripts/verify-ats-adapters.mjs && node scripts/verify-panel-release.mjs && node scripts/verify-evidence-dashboard.mjs && node --env-file=.env scripts/verify-reviewer-feedback-schema.mjs && node scripts/verify-reviewer-feedback-function.mjs && node scripts/verify-reviewer-feedback-client.mjs",
     "verify:guards": "node --env-file=.env scripts/verify-falsifiability.mjs",
     "verify:adapters": "node scripts/verify-adapter.mjs",
     "verify:ats-adapters": "node scripts/verify-ats-adapters.mjs",
@@ -22,10 +23,17 @@
     "probe:sources": "node scripts/probe-sources.mjs",
     "probe:adzuna": "node --env-file=.env scripts/probe-adzuna.mjs",
     "up": "docker compose up -d",
-    "down": "docker compose down"
+    "down": "docker compose down",
+    "verify:reviewer-feedback-function": "node scripts/verify-reviewer-feedback-function.mjs",
+    "build:feedback": "node scripts/build-feedback.mjs",
+    "verify:reviewer-feedback-client": "node scripts/verify-reviewer-feedback-client.mjs"
   },
   "dependencies": {
     "pg": "^8.13.0",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "@supabase/supabase-js": "2.115.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

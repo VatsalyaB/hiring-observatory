@@ -3,40 +3,80 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Aggregate evidence from the Hiring Observatory fixed-quarter ATS employer panel.">
-  <title>Hiring Observatory — Evidence Instrument</title>
+  <meta name="description" content="Decision-led aggregate evidence from the Hiring Observatory fixed-quarter ATS employer panel.">
+  <title>Hiring Observatory — Decision Evidence</title>
   <link rel="stylesheet" href="./styles.css">
   <script type="module" src="./dashboard.mjs"></script>
+  <script type="module" src="./feedback.bundle.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to evidence</a>
+
   <header class="masthead">
-    <p class="eyebrow">Hiring Observatory / Evidence instrument 01</p>
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a class="brand" href="#main">Hiring Observatory</a>
+      <div>
+        <a href="#decision-brief">Decision</a>
+        <a href="#evidence-explorer">Evidence</a>
+        <a href="#methodology">Method</a>
+      </div>
+    </nav>
+
     <div class="title-lockup">
-      <h1>What can we<br><em>actually</em> observe?</h1>
-      <p class="lede">A fixed-denominator view of public job boards. Complete captures in; unsupported claims out.</p>
+      <h1>Turn observable demand into a defensible hiring decision.</h1>
+      <p class="lede">See the signal, understand what it permits, and act without pretending a narrow cohort represents the whole market.</p>
     </div>
+
     <div class="instrument-state" id="instrument-state" aria-live="polite">
       <span class="signal" aria-hidden="true"></span>
-      <span>Loading instrument state…</span>
+      <span>Loading release state…</span>
     </div>
   </header>
 
   <main id="main">
+    <section class="decision-brief" id="decision-brief" aria-labelledby="decision-status">
+      <div class="decision-copy">
+        <h2 id="decision-status">Checking what this release can support…</h2>
+        <p id="decision-summary">No recommendation is shown until the release is validated.</p>
+      </div>
+      <dl class="decision-actions" id="decision-actions" aria-live="polite"></dl>
+    </section>
+
+    <section class="explorer" id="evidence-explorer" aria-labelledby="explorer-title">
+      <div class="section-heading">
+        <h2 id="explorer-title">Inspect the evidence behind the decision.</h2>
+        <p>Change one scope at a time. The result keeps its denominator visible.</p>
+      </div>
+      <form class="control-deck" id="filters">
+        <div><label for="period-filter">Period</label><select id="period-filter" name="period"></select></div>
+        <div><label for="provider-filter">Provider</label><select id="provider-filter" name="provider"></select></div>
+        <div><label for="sector-filter">Sector</label><select id="sector-filter" name="sector"></select></div>
+        <div><label for="weighting-filter">Measure</label><select id="weighting-filter" name="weighting"><option value="listings">Listings</option><option value="employers">Employers</option></select></div>
+      </form>
+      <div class="scope-line" id="scope-line"></div>
+      <div class="primary-gauge" id="primary-gauge" aria-live="polite"></div>
+    </section>
+
     <section class="readout" aria-labelledby="readout-title">
-      <div class="section-number">01</div>
-      <div>
-        <p class="kicker">Instrument readiness</p>
-        <h2 id="readout-title">Evidence before narrative.</h2>
+      <div class="section-heading">
+        <h2 id="readout-title">Release proof, kept in proportion.</h2>
+        <p>These numbers explain evidence quality. They are not the market finding.</p>
       </div>
       <div class="readout-grid" id="readout-grid" aria-live="polite"></div>
     </section>
 
-    <section class="composition" aria-labelledby="composition-title">
-      <div class="section-number">02</div>
+    <section class="insights" aria-labelledby="insights-title">
       <div class="section-heading">
-        <p class="kicker">Cohort composition</p>
-        <h2 id="composition-title">The denominator, exposed.</h2>
+        <h2 id="insights-title">What the selected cohort shows.</h2>
+        <p>Each sentence links back to a published aggregate metric.</p>
+      </div>
+      <div id="insight-grid" class="insight-grid"></div>
+    </section>
+
+    <section class="composition" aria-labelledby="composition-title">
+      <div class="section-heading">
+        <h2 id="composition-title">Know who is inside the denominator.</h2>
+        <p>Provider and sector mix reveal where the pilot can distort interpretation.</p>
       </div>
       <div class="composition-grid">
         <div>
@@ -50,36 +90,72 @@
       </div>
     </section>
 
-    <section class="explorer" aria-labelledby="explorer-title">
-      <div class="section-number">03</div>
-      <div class="section-heading">
-        <p class="kicker">Observable demand</p>
-        <h2 id="explorer-title">Turn the instrument, not the story.</h2>
-      </div>
-      <form class="control-deck" id="filters">
-        <div><label for="period-filter">Period</label><select id="period-filter" name="period"></select></div>
-        <div><label for="provider-filter">Provider</label><select id="provider-filter" name="provider"></select></div>
-        <div><label for="sector-filter">Sector</label><select id="sector-filter" name="sector"></select></div>
-        <div><label for="weighting-filter">Weighting</label><select id="weighting-filter" name="weighting"><option value="listings">Listings</option><option value="employers">Employers</option></select></div>
-      </form>
-      <div class="scope-line" id="scope-line"></div>
-      <div class="primary-gauge" id="primary-gauge" aria-live="polite"></div>
-    </section>
-
-    <section class="insights" aria-labelledby="insights-title">
-      <div class="section-number">04</div>
-      <div class="section-heading"><p class="kicker">Evidence cards</p><h2 id="insights-title">Every sentence has a meter.</h2></div>
-      <div id="insight-grid" class="insight-grid"></div>
-    </section>
-
     <section class="trend-lock" aria-labelledby="trend-title">
-      <div class="lock-mark" aria-hidden="true">×</div>
-      <div><p class="kicker">Trend gate</p><h2 id="trend-title">Comparison is locked.</h2><p id="trend-reason">Waiting for validated release data.</p></div>
+      <div>
+        <h2 id="trend-title">Comparison is locked.</h2>
+        <p id="trend-reason">Waiting for validated release data.</p>
+      </div>
       <div class="seal" id="trend-seal">NOT ELIGIBLE</div>
     </section>
 
-    <details class="methodology">
-      <summary>Open methodology drawer <span aria-hidden="true">↘</span></summary>
+    <section class="engineering-proof" aria-labelledby="engineering-title">
+      <div>
+        <h2 id="engineering-title">The system earns the recommendation.</h2>
+        <p>The case study sits after the decision because reliable evidence is the product—not a substitute for one.</p>
+      </div>
+      <ol>
+        <li>Capture immutable source records.</li>
+        <li>Validate schema and cohort completeness.</li>
+        <li>Fail closed when a claim crosses the evidence boundary.</li>
+        <li>Publish aggregate evidence only.</li>
+      </ol>
+    </section>
+
+
+    <section id="reviewer-feedback" aria-labelledby="feedback-title">
+      <div class="section-heading">
+        <h2 id="feedback-title">Review the evidence.</h2>
+        <p>Approved feedback is public. Sign in with GitHub to submit plain-text feedback for review.</p>
+      </div>
+      <div id="feedback-status" role="status" aria-live="polite">Reviewer feedback is not connected yet.</div>
+      <button id="feedback-retry" type="button" hidden>Retry feedback</button>
+      <div id="feedback-anonymous">
+        <button id="feedback-sign-in" type="button">Sign in with GitHub to give feedback</button>
+      </div>
+      <button id="feedback-sign-out" type="button" hidden>Sign out</button>
+      <div class="feedback-workspace">
+        <form id="feedback-form">
+          <h3>Give feedback</h3>
+          <p>Your approved feedback will show your GitHub login publicly.</p>
+          <label for="feedback-target">Evidence target</label>
+          <select id="feedback-target" required><option value="">Choose a target</option></select>
+          <label for="feedback-category">Category</label>
+          <select id="feedback-category" required>
+            <option value="">Choose a category</option>
+            <option value="useful">Useful</option>
+            <option value="unclear">Unclear</option>
+            <option value="evidence_concern">Evidence concern</option>
+            <option value="suggestion">Suggestion</option>
+          </select>
+          <label for="feedback-comment">Comment</label>
+          <textarea id="feedback-comment" maxlength="2000" required></textarea>
+          <output id="feedback-characters" for="feedback-comment">2,000 characters remaining</output>
+          <button id="feedback-submit" type="submit">Submit for review</button>
+        </form>
+        <div>
+          <h3>Public feedback</h3>
+          <ul id="public-feedback-list"></ul>
+          <h3>Your feedback</h3>
+          <ul id="your-feedback-list"></ul>
+        </div>
+      </div>
+      <section id="moderation-queue" hidden>
+        <h3>Moderation queue</h3>
+        <ul id="moderation-feedback-list"></ul>
+      </section>
+    </section>
+    <details class="methodology" id="methodology">
+      <summary>Read the full methodology</summary>
       <div class="method-grid">
         <article><h3>Fixed denominator</h3><p>A named employer cohort stays fixed for the measurement quarter. Membership does not roll silently.</p></article>
         <article><h3>Complete means complete</h3><p>Every cohort member must have a validated board capture or a qualified valid zero. Missing is never zero.</p></article>

@@ -9,6 +9,21 @@ export function createDashboardModel(release) {
       ...insight,
       metric: [...release.demand, ...release.employer_breadth].find((metric) => metric.metric_id === insight.metric_id),
     })),
+    decision: release.readiness.state === 'pilot_only'
+      ? {
+          headline: 'Treat this as a source-health check, not a market read.',
+          summary: 'The pilot proves the capture and denominator path; it is not yet a basis for workforce planning.',
+          use_now: 'Verify source coverage and inspect observable openings inside this cohort.',
+          do_not_use: 'Do not change a hiring plan, salary band, or market forecast from this pilot.',
+          next_check: 'Check the selected denominator before sharing any number.',
+        }
+      : {
+          headline: 'Use this complete release to compare observable demand.',
+          summary: 'Read every result with its selected cohort, period, and denominator.',
+          use_now: 'Compare observable demand inside the published cohort.',
+          do_not_use: 'Do not treat cohort results as total market demand.',
+          next_check: 'Check the selected denominator before sharing any number.',
+        },
     trend: { ...release.trend_gate },
     filters: {
       periods: release.periods.map((period) => period.id),

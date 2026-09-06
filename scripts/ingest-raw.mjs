@@ -1,5 +1,6 @@
 import { mkdir, writeFile, access, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { getJsonWithTransientRetry } from './lib/ingest-http.mjs';
 
 // CRUDE RAW CAPTURE. Deliberately minimal, deliberately shipped before M2's adapter contract.
 //
@@ -39,22 +40,10 @@ const provenance = {
   sha: process.env.GITHUB_SHA ?? 'local',
 };
 
-async function getJson(url) {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
-  try {
-    const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: ctl.signal });
-    const text = await res.text();
-    if (!res.ok) {
-      // Status and body LENGTH only. An error body can echo the request back, and for Adzuna the
-      // request carries credentials in its query string.
-      throw new Error(`HTTP ${res.status} (${text.length}B body withheld)`);
-    }
-    return JSON.parse(text);
-  } finally {
-    clearTimeout(timer);
-  }
-}
+const getJson = (url) => getJsonWithTransientRetry(url, {
+  headers: { 'User-Agent': UA, Accept: 'application/json' },
+  timeoutMs: TIMEOUT_MS,
+});
 
 // --- adapters: fetch and return raw records EXACTLY as received -------------------------------
 

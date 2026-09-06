@@ -34,7 +34,7 @@ export function prohibitedPublicPath(path) {
   const segments = lower.split('/');
   const basename = segments.at(-1);
 
-  if (segments.some((segment) => ['.git', 'raw', '_manifests', 'backups'].includes(segment))) {
+  if (segments.some((segment) => ['.git', 'raw', '_manifests', 'backups', 'private'].includes(segment))) {
     return true;
   }
   if (basename?.startsWith('.env') && lower !== '.env.example') {
@@ -43,7 +43,7 @@ export function prohibitedPublicPath(path) {
   if (['.github/workflows/canary.yml', '.github/workflows/ingest.yml'].includes(lower)) {
     return true;
   }
-  if (lower === 'config/ats-employers.json' || lower.startsWith('config/cohorts/')) {
+  if (lower === 'config/ats-employers.json' || lower === 'config/ats-panel.json' || lower.startsWith('config/cohorts/')) {
     return true;
   }
   if (lower.startsWith('adapters/fixtures/') && segments.includes('private')) {
@@ -109,12 +109,25 @@ async function requireSyntheticFixtures(treeRoot, paths) {
   }
 }
 
-function containsUnsafeEvidenceJson(value) {
-  if (Array.isArray(value)) return value.some(containsUnsafeEvidenceJson);
+function containsUnsafeEvidenceJson(value, options = {}) {
+  const {
+    allowPackageLockFundingUrl = false,
+    allowPublicEvidenceLabels = false,
+    allowUrlValue = false,
+    packageLockPath = null,
+  } = options;
+  if (Array.isArray(value)) return value.some((item) => containsUnsafeEvidenceJson(item, { ...options, allowUrlValue: false }));
   if (value == null || typeof value !== 'object') {
-    return typeof value === 'string' && /^https?:\/\//i.test(value);
+    return typeof value === 'string' && /^https?:\/\//i.test(value) && !allowUrlValue;
   }
   const keys = Object.keys(value).map((key) => key.toLowerCase());
+  if (keys.some((key) => (
+    key.includes('description')
+    || ((key !== 'label' || !allowPublicEvidenceLabels)
+      && /(?:^|_)(?:(?:human_|gold_)?label|evidence|confidence|sampling(?:_hint)?)(?:_|$)/.test(key))
+  ))) {
+    return true;
+  }
   if (keys.some((key) => [
     'jobs',
     'jobpostings',
@@ -122,14 +135,36 @@ function containsUnsafeEvidenceJson(value) {
     'postings',
     'records',
     'results',
-  ].includes(key) || /(?:^|_)url$/.test(key))) {
+  ].includes(key) || (/(?:^|_)url$/.test(key) && !(allowPackageLockFundingUrl && key === 'url')))) {
     return true;
   }
-  return containsListingLikeObject(value) || Object.values(value).some(containsUnsafeEvidenceJson);
+  return containsListingLikeObject(value) || Object.entries(value).some(([key, item]) => {
+    const normalizedKey = key.toLowerCase();
+    const isObject = item != null && typeof item === 'object';
+    const childPackageLockPath = (
+      packageLockPath === 'root' && isObject && normalizedKey === 'packages'
+    ) ? 'modern-package-map' : (
+      packageLockPath === 'root' && isObject && normalizedKey === 'dependencies'
+    ) ? 'legacy-dependency-map' : packageLockPath === 'modern-package-map' ? 'modern-package-metadata'
+      : packageLockPath === 'legacy-dependency-map' ? 'legacy-dependency-metadata'
+        : packageLockPath === 'legacy-dependency-metadata' && isObject && normalizedKey === 'dependencies'
+          ? 'legacy-dependency-map' : null;
+    const isDependencyMetadata = ['modern-package-metadata', 'legacy-dependency-metadata'].includes(packageLockPath);
+    return containsUnsafeEvidenceJson(item, {
+      ...options,
+      packageLockPath: childPackageLockPath,
+      allowPackageLockFundingUrl: isDependencyMetadata && normalizedKey === 'funding',
+      allowUrlValue: typeof item === 'string' && (
+        (isDependencyMetadata && ['resolved', 'integrity'].includes(normalizedKey))
+        || (allowPackageLockFundingUrl && normalizedKey === 'url')
+      ),
+    });
+  });
 }
 
 function containsPrivateRepositoryLocator(content) {
-  return /https?:\/\/github\.com\/[^\s/"']+\/[^\s/"']*private(?:\.git)?\b/i.test(content);
+  return /https?:\/\/github\.com\/[^\s/"']+\/[^\s/"']*private(?:\.git)?\b/i.test(content)
+    || /(?:^|[^a-z0-9_-])private\/evaluation(?:\/|\b)/i.test(content);
 }
 
 async function inspectPublicContent(treeRoot, paths) {
@@ -138,14 +173,17 @@ async function inspectPublicContent(treeRoot, paths) {
     if (containsPrivateRepositoryLocator(content)) {
       throw new Error(`Private repository locator found in public file: ${path}`);
     }
-    if (/^docs\/evidence\/data\/.+\.json$/i.test(path)) {
+    if (path.toLowerCase().endsWith('.json') && !/^adapters\/fixtures\/.+\.json$/i.test(path)) {
       let document;
       try {
         document = JSON.parse(content);
       } catch (error) {
         throw new Error(`Public evidence JSON is invalid: ${path}: ${error.message}`, { cause: error });
       }
-      if (containsUnsafeEvidenceJson(document)) {
+      if (containsUnsafeEvidenceJson(document, {
+        packageLockPath: path === 'package-lock.json' ? 'root' : null,
+        allowPublicEvidenceLabels: path === 'docs/evidence/data/pilot.json',
+      })) {
         throw new Error(`Unsafe evidence JSON found in public file: ${path}`);
       }
     }
@@ -161,10 +199,10 @@ export async function verifyPublicTree({ treeRoot, mapPath }) {
   const unexpected = actual.filter((path) => !expectedSet.has(path));
   const missing = expected.filter((path) => !actualSet.has(path));
 
-  if (unexpected.length > 0) throw new Error(`Unexpected public file(s): ${unexpected.join(', ')}`);
-  if (missing.length > 0) throw new Error(`Missing public file(s): ${missing.join(', ')}`);
   const prohibited = actual.filter(prohibitedPublicPath);
   if (prohibited.length > 0) throw new Error(`Prohibited public path(s): ${prohibited.join(', ')}`);
+  if (unexpected.length > 0) throw new Error(`Unexpected public file(s): ${unexpected.join(', ')}`);
+  if (missing.length > 0) throw new Error(`Missing public file(s): ${missing.join(', ')}`);
   await requireSyntheticFixtures(treeRoot, actual);
   await inspectPublicContent(treeRoot, actual);
   return { files: actual };
@@ -222,7 +260,10 @@ export async function verifyPublicHistory(repository) {
       if (fixture && document?.fixture_kind !== 'synthetic') {
         throw new Error(`Historical fixture lacks fixture_kind "synthetic" in ${commit}:${path}`);
       }
-      if (/^docs\/evidence\/data\/.+\.json$/i.test(path) && containsUnsafeEvidenceJson(document)) {
+      if (!fixture && containsUnsafeEvidenceJson(document, {
+        packageLockPath: path === 'package-lock.json' ? 'root' : null,
+        allowPublicEvidenceLabels: path === 'docs/evidence/data/pilot.json',
+      })) {
         throw new Error(`Unsafe evidence JSON found in public history ${commit}:${path}`);
       }
       if (!fixture && containsListingLikeObject(document)) {

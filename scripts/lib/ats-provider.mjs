@@ -6,9 +6,62 @@ const CAPTURE_KEYS = [
   'reported_total',
   'vacancy_ids',
   'pages',
+  'attempts',
+  'page_requests',
 ];
-const PROVIDERS = new Set(['greenhouse', 'ashby', 'smartrecruiters']);
+export const ATS_PROVIDERS = Object.freeze(['greenhouse', 'ashby', 'smartrecruiters']);
+const PROVIDERS = new Set(ATS_PROVIDERS);
 const SAFE_BOARD = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+export const ATS_COHORT_TARGET = 45;
+export const ATS_PROVIDER_FLOOR = 8;
+export const ATS_PROVIDER_CAP = 19;
+const ATS_PROVIDER_IDEAL = ATS_COHORT_TARGET / ATS_PROVIDERS.length;
+
+function lexicographicCounts(left, right) {
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return left[index] - right[index];
+  }
+  return 0;
+}
+
+export function selectAtsProviderAllocation(qualifiedCounts) {
+  const available = ATS_PROVIDERS.map((provider) => {
+    const value = qualifiedCounts?.[provider];
+    if (!Number.isSafeInteger(value) || value < 0) throw new Error('invalid qualified provider counts');
+    return value;
+  });
+  let best = null;
+  for (let greenhouse = ATS_PROVIDER_FLOOR; greenhouse <= ATS_PROVIDER_CAP; greenhouse += 1) {
+    for (let ashby = ATS_PROVIDER_FLOOR; ashby <= ATS_PROVIDER_CAP; ashby += 1) {
+      const smartrecruiters = ATS_COHORT_TARGET - greenhouse - ashby;
+      if (smartrecruiters < ATS_PROVIDER_FLOOR || smartrecruiters > ATS_PROVIDER_CAP) continue;
+      const vector = [greenhouse, ashby, smartrecruiters];
+      const shortfall = vector.reduce(
+        (sum, count, index) => sum + Math.max(0, count - available[index]),
+        0,
+      );
+      const squaredDeviation = vector.reduce(
+        (sum, count) => sum + ((count - ATS_PROVIDER_IDEAL) ** 2),
+        0,
+      );
+      const candidate = { vector, shortfall, squaredDeviation };
+      if (
+        best === null
+        || candidate.shortfall < best.shortfall
+        || (candidate.shortfall === best.shortfall && candidate.squaredDeviation < best.squaredDeviation)
+        || (
+          candidate.shortfall === best.shortfall
+          && candidate.squaredDeviation === best.squaredDeviation
+          && lexicographicCounts(candidate.vector, best.vector) < 0
+        )
+      ) best = candidate;
+    }
+  }
+  return {
+    counts: Object.fromEntries(ATS_PROVIDERS.map((provider, index) => [provider, best.vector[index]])),
+    shortfall: best.shortfall,
+  };
+}
 
 export const ATS_CODES = Object.freeze({
   HTTP: 'http_failure',
@@ -27,16 +80,18 @@ export const ATS_CODES = Object.freeze({
 });
 
 export class AtsProviderError extends Error {
-  constructor(code, pageRequests = 0) {
+  constructor(code, pageRequests = 0, attempts = 1, diagnostic = null) {
     super(`ATS provider capture failed: ${code}`);
     this.name = 'AtsProviderError';
     this.code = code;
     this.pageRequests = pageRequests;
+    this.attempts = attempts;
+    if (diagnostic !== null) this.diagnostic = diagnostic;
   }
 }
 
-export function failAts(code, pageRequests = 0) {
-  throw new AtsProviderError(code, pageRequests);
+export function failAts(code, pageRequests = 0, diagnostic = null) {
+  throw new AtsProviderError(code, pageRequests, 1, diagnostic);
 }
 
 export function assertAtsEmployer(employer, provider) {
@@ -108,6 +163,8 @@ export function buildBoardCapture({ provider, employer, ids, pages, qualificatio
     reported_total: ids.length,
     vacancy_ids: ids,
     pages,
+    attempts: 1,
+    page_requests: pages.length,
   });
 }
 
@@ -132,7 +189,9 @@ export function validateBoardCapture(value) {
     || value.reported_total !== value.vacancy_ids.length
     || value.valid_zero !== (value.reported_total === 0)
     || !Array.isArray(value.pages) || value.pages.length === 0
-    || value.pages.some((page) => page === null || typeof page !== 'object' || Array.isArray(page))) invalid();
+    || value.pages.some((page) => page === null || typeof page !== 'object' || Array.isArray(page))
+    || !Number.isSafeInteger(value.attempts) || value.attempts < 1 || value.attempts > 3
+    || !Number.isSafeInteger(value.page_requests) || value.page_requests < value.pages.length) invalid();
   return value;
 }
 
@@ -140,8 +199,10 @@ export function createAtsFetchPage({
   fetchImpl = fetch,
   timeoutMs = 20_000,
   userAgent = 'hiring-observatory/0.1 (portfolio research; contact via github.com/VatsalyaB)',
+  redirect = 'follow',
 } = {}) {
-  if (typeof fetchImpl !== 'function' || !Number.isInteger(timeoutMs) || timeoutMs < 1) {
+  if (typeof fetchImpl !== 'function' || !Number.isInteger(timeoutMs) || timeoutMs < 1
+    || !['follow', 'manual'].includes(redirect)) {
     throw new Error('invalid ATS fetch configuration');
   }
   return async function fetchAtsPage(url) {
@@ -150,7 +211,7 @@ export function createAtsFetchPage({
     try {
       const response = await fetchImpl(url, {
         headers: { Accept: 'application/json', 'User-Agent': userAgent },
-        redirect: 'follow',
+        redirect,
         signal: controller.signal,
       });
       return {

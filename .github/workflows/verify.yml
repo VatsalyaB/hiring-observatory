@@ -46,6 +46,12 @@ jobs:
 
       - run: npm ci
 
+      - name: build and verify reviewer feedback
+        run: |
+          npm run build:feedback
+          npm run verify:reviewer-feedback-function
+          npm run verify:reviewer-feedback-client
+
       - name: compose an ephemeral environment
         run: |
           {

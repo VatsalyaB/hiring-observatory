@@ -1,13 +1,29 @@
+import { ATS_PROVIDERS, selectAtsProviderAllocation } from './ats-provider.mjs';
+
 const RELEASE_KEYS = ['schema_version', 'release_id', 'generated_at', 'study', 'readiness', 'periods', 'coverage', 'composition', 'demand', 'employer_breadth', 'insights', 'trend_gate'];
 const FORBIDDEN_KEYS = new Set(['vacancy_id', 'title', 'description', 'company_name', 'employer_vacancy_count', 'advert_url', 'apply_url', 'source_payload', 'run_id', 'manifest_path', 'raw_path', 'api_key', 'credentials', 'error_body', 'repository_url']);
-const PROVIDERS = ['ashby', 'greenhouse', 'smartrecruiters'];
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+const TREND_RELEASE_AT = '2027-01-01T00:00:00.000Z';
+const MIN_TREND_COMPLETE_DAYS = 28;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function invalid() { throw new Error('invalid panel release'); }
 function object(value) { return value !== null && typeof value === 'object' && !Array.isArray(value); }
 function exact(value, keys) { return object(value) && Object.keys(value).sort().join('\0') === [...keys].sort().join('\0'); }
 function timestamp(value) { return typeof value === 'string' && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value; }
+function trustedTimestamp(value) { return value instanceof Date && Number.isFinite(value.getTime()) ? value.toISOString() : null; }
+function utcDay(value) {
+  if (typeof value !== 'string' || !DATE.test(value)) return null;
+  const parsed = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === value ? parsed : null;
+}
+function dateSpanDays(start, end) {
+  const first = utcDay(start);
+  const last = utcDay(end);
+  return first !== null && last !== null && first <= last ? ((last - first) / DAY_MS) + 1 : null;
+}
 
 function scan(value) {
   if (Array.isArray(value)) return value.forEach(scan);
@@ -23,15 +39,55 @@ function scan(value) {
 
 function round(value) { return Number(value.toFixed(4)); }
 
+function completeTrendPeriod(period) {
+  return Number.isSafeInteger(period.complete_days) && Number.isSafeInteger(period.total_days)
+    && period.complete_days === period.total_days && period.complete_days >= MIN_TREND_COMPLETE_DAYS;
+}
+
+function completeTrendSupport(coverage) {
+  return Number.isSafeInteger(coverage.expected_capture_units) && Number.isSafeInteger(coverage.complete_capture_units)
+    && coverage.expected_capture_units > 0 && coverage.complete_capture_units === coverage.expected_capture_units
+    && coverage.coverage_rate === 1;
+}
+
+function deriveTrendGate(periods, coverage, cohortId, generatedAt, evaluatedAt) {
+  if (periods.some((period) => period.phase === 'pilot')) return { eligible: false, reason: 'pilot_period' };
+  if (periods.some((period) => period.phase !== 'measurement')) return { eligible: false, reason: 'invalid_phase' };
+  if (periods.some((period) => period.cohort_id !== cohortId)) return { eligible: false, reason: 'incompatible_cohorts' };
+  if (periods.length < 2) return { eligible: false, reason: 'insufficient_periods' };
+  if (periods.some((period) => !completeTrendPeriod(period))) return { eligible: false, reason: 'insufficient_complete_weeks' };
+  const coverageByPeriod = new Map(coverage.map((row) => [row.period_id, row]));
+  if (coverageByPeriod.size !== periods.length || !periods.every((period) => completeTrendSupport(coverageByPeriod.get(period.id) ?? {}))) return { eligible: false, reason: 'incomplete_support' };
+  if (generatedAt < TREND_RELEASE_AT || evaluatedAt < TREND_RELEASE_AT) return { eligible: false, reason: 'q4_time_lock' };
+  return { eligible: true, reason: null };
+}
+
 export function buildPanelRelease({ releaseId, generatedAt, registry, cohort, periods, now = new Date() }) {
+  const evaluatedAt = trustedTimestamp(now);
   if (typeof releaseId !== 'string' || !ID.test(releaseId) || !timestamp(generatedAt)
-    || !Array.isArray(periods) || periods.length === 0) throw new Error('invalid panel release input');
+    || !evaluatedAt || !Array.isArray(periods) || periods.length === 0) throw new Error('invalid panel release input');
+  if (generatedAt > evaluatedAt) throw new Error('panel release generated_at is in the future');
   const byId = new Map(registry.employers.map((employer) => [employer.id, employer]));
   const memberRows = cohort.members.map((id) => byId.get(id));
   if (memberRows.some((row) => !row || row.status !== 'qualified')) throw new Error('invalid qualified cohort');
   const providerIds = [...new Set(memberRows.map((row) => row.provider))].sort();
   const sectorIds = [...new Set(memberRows.map((row) => row.sector))].sort();
-  const readinessState = memberRows.length >= 30 && PROVIDERS.every((provider) => providerIds.includes(provider)) ? 'production_ready' : 'pilot_only';
+  const qualifiedCounts = Object.fromEntries(ATS_PROVIDERS.map((provider) => [
+    provider,
+    registry.employers.filter(
+      (employer) => employer.provider === provider && employer.status === 'qualified',
+    ).length,
+  ]));
+  const selectedCounts = Object.fromEntries(ATS_PROVIDERS.map((provider) => [
+    provider,
+    memberRows.filter((employer) => employer.provider === provider).length,
+  ]));
+  const allocation = selectAtsProviderAllocation(qualifiedCounts);
+  const readinessState = memberRows.length === 45
+    && allocation.shortfall === 0
+    && ATS_PROVIDERS.every((provider) => selectedCounts[provider] === allocation.counts[provider])
+    ? 'production_ready'
+    : 'pilot_only';
   const demand = [];
   const employerBreadth = [];
   const periodRows = [];
@@ -41,7 +97,7 @@ export function buildPanelRelease({ releaseId, generatedAt, registry, cohort, pe
   for (const period of periods) {
     if (!object(period) || typeof period.id !== 'string' || !ID.test(period.id) || periodIds.has(period.id)
       || typeof period.label !== 'string' || !['pilot', 'measurement'].includes(period.phase)
-      || !DATE.test(period.start) || !DATE.test(period.end) || period.start > period.end
+      || utcDay(period.start) === null || utcDay(period.end) === null || period.start > period.end
       || !Array.isArray(period.days) || period.days.length === 0) throw new Error('invalid panel period');
     periodIds.add(period.id);
     if (period.phase === 'measurement' && (period.start < cohort.effective_from || period.end > cohort.effective_to)) throw new Error('measurement period outside cohort effective dates');
@@ -49,7 +105,7 @@ export function buildPanelRelease({ releaseId, generatedAt, registry, cohort, pe
     const seenDays = new Set();
     const rows = [];
     for (const day of period.days) {
-      if (!object(day) || !DATE.test(day.partition) || day.partition < period.start || day.partition > period.end
+      if (!object(day) || utcDay(day.partition) === null || day.partition < period.start || day.partition > period.end
         || seenDays.has(day.partition) || day.comparable !== true || day.failed !== 0 || day.missing !== 0
         || !Array.isArray(day.captures)) throw new Error('period requires complete capture days');
       seenDays.add(day.partition);
@@ -62,7 +118,9 @@ export function buildPanelRelease({ releaseId, generatedAt, registry, cohort, pe
       }
       if (seenEmployers.size !== cohort.members.length) throw new Error('period capture membership incomplete');
     }
-    periodRows.push({ id: period.id, label: period.label, phase: period.phase, start: period.start, end: period.end, complete_days: period.days.length, total_days: period.days.length, cohort_id: cohort.id });
+    const totalDays = dateSpanDays(period.start, period.end);
+    if (seenDays.size !== totalDays) throw new Error('period requires complete capture days');
+    periodRows.push({ id: period.id, label: period.label, phase: period.phase, start: period.start, end: period.end, complete_days: seenDays.size, total_days: totalDays, cohort_id: cohort.id });
     const units = period.days.length * cohort.members.length;
     coverage.push({ period_id: period.id, expected_capture_units: units, complete_capture_units: units, coverage_rate: 1 });
     for (const provider of ['all', ...providerIds]) for (const sector of ['all', ...sectorIds]) {
@@ -75,11 +133,7 @@ export function buildPanelRelease({ releaseId, generatedAt, registry, cohort, pe
     }
   }
 
-  let trendGate;
-  if (periodRows.some((period) => period.phase === 'pilot')) trendGate = { eligible: false, reason: 'pilot_period' };
-  else if (periodRows.length < 2) trendGate = { eligible: false, reason: 'insufficient_periods' };
-  else if (now < new Date('2027-01-01T00:00:00.000Z')) trendGate = { eligible: false, reason: 'q4_time_lock' };
-  else trendGate = { eligible: true, reason: null };
+  const trendGate = deriveTrendGate(periodRows, coverage, cohort.id, generatedAt, evaluatedAt);
 
   const providerComposition = providerIds.map((id) => ({ id, employers: memberRows.filter((row) => row.provider === id).length, share: round(memberRows.filter((row) => row.provider === id).length / memberRows.length) }));
   const sectorComposition = sectorIds.map((id) => ({ id, employers: memberRows.filter((row) => row.sector === id).length, share: round(memberRows.filter((row) => row.sector === id).length / memberRows.length) }));
@@ -97,18 +151,19 @@ export function buildPanelRelease({ releaseId, generatedAt, registry, cohort, pe
     demand,
     employer_breadth: employerBreadth,
     insights: [
-      { id: 'observable-demand', kind: 'level', metric_id: totalMetric.metric_id, summary: `${totalMetric.listing_count} observable vacancies across complete pilot captures.` },
+      { id: 'observable-demand', kind: 'level', metric_id: totalMetric.metric_id, summary: `${totalMetric.listing_count} observable vacancies across complete panel captures.` },
       { id: 'employer-breadth', kind: 'breadth', metric_id: breadthMetric.metric_id, summary: `${breadthMetric.employers_with_openings} of ${breadthMetric.eligible_employers} cohort employers had observable openings.` },
     ],
     trend_gate: trendGate,
   };
-  validatePanelRelease(release);
+  validatePanelRelease(release, { now });
   return release;
 }
 
-export function validatePanelRelease(value) {
+export function validatePanelRelease(value, { now = new Date() } = {}) {
+  const evaluatedAt = trustedTimestamp(now);
   scan(value);
-  if (!exact(value, RELEASE_KEYS) || value.schema_version !== 1 || typeof value.release_id !== 'string' || !ID.test(value.release_id) || !timestamp(value.generated_at)
+  if (!evaluatedAt || !exact(value, RELEASE_KEYS) || value.schema_version !== 1 || typeof value.release_id !== 'string' || !ID.test(value.release_id) || !timestamp(value.generated_at) || value.generated_at > evaluatedAt
     || !exact(value.study, ['id', 'cohort_id', 'country', 'population', 'measurement_start', 'measurement_end'])
     || !exact(value.readiness, ['state', 'qualified_employers', 'target_min', 'target_max', 'providers'])
     || !exact(value.composition, ['providers', 'sectors'])
@@ -119,12 +174,28 @@ export function validatePanelRelease(value) {
     || !Number.isSafeInteger(value.readiness.qualified_employers) || value.readiness.qualified_employers < 0
     || value.readiness.target_min !== 30 || value.readiness.target_max !== 50
     || !Array.isArray(value.readiness.providers)) invalid();
-  for (const row of value.periods) if (!exact(row, ['id', 'label', 'phase', 'start', 'end', 'complete_days', 'total_days', 'cohort_id'])) invalid();
-  for (const row of value.coverage) if (!exact(row, ['period_id', 'expected_capture_units', 'complete_capture_units', 'coverage_rate'])) invalid();
+  const periodIds = new Set();
+  for (const row of value.periods) {
+    const totalDays = dateSpanDays(row.start, row.end);
+    if (!exact(row, ['id', 'label', 'phase', 'start', 'end', 'complete_days', 'total_days', 'cohort_id'])
+      || typeof row.id !== 'string' || !ID.test(row.id) || typeof row.label !== 'string'
+      || row.cohort_id !== value.study.cohort_id || !['pilot', 'measurement'].includes(row.phase)
+      || totalDays === null || !Number.isSafeInteger(row.complete_days) || !Number.isSafeInteger(row.total_days)
+      || row.complete_days !== row.total_days || row.total_days !== totalDays || periodIds.has(row.id)) invalid();
+    periodIds.add(row.id);
+  }
+  const coverageIds = new Set();
+  for (const row of value.coverage) {
+    if (!exact(row, ['period_id', 'expected_capture_units', 'complete_capture_units', 'coverage_rate']) || !periodIds.has(row.period_id) || coverageIds.has(row.period_id)) invalid();
+    coverageIds.add(row.period_id);
+  }
+  if (coverageIds.size !== periodIds.size) invalid();
   for (const row of [...value.composition.providers, ...value.composition.sectors]) if (!exact(row, ['id', 'employers', 'share'])) invalid();
   for (const row of value.demand) if (!exact(row, ['metric_id', 'period_id', 'provider', 'sector', 'listing_count'])) invalid();
   for (const row of value.employer_breadth) if (!exact(row, ['metric_id', 'period_id', 'provider', 'sector', 'eligible_employers', 'employers_with_openings', 'rate'])) invalid();
   for (const row of value.insights) if (!exact(row, ['id', 'kind', 'metric_id', 'summary'])) invalid();
   if (typeof value.trend_gate.eligible !== 'boolean' || (value.trend_gate.eligible ? value.trend_gate.reason !== null : typeof value.trend_gate.reason !== 'string')) invalid();
+  const expectedTrendGate = deriveTrendGate(value.periods, value.coverage, value.study.cohort_id, value.generated_at, evaluatedAt);
+  if (value.trend_gate.eligible !== expectedTrendGate.eligible || value.trend_gate.reason !== expectedTrendGate.reason) invalid();
   return value;
 }

@@ -49,6 +49,14 @@ test('dashboard model exposes safe filter choices and readiness', () => {
   assert.deepEqual(model.filters.sectors, ['all', 'finance', 'technology']);
 });
 
+test('pilot release produces cautious decision guidance', () => {
+  const decision = createDashboardModel(release).decision;
+  assert.match(decision.headline, /source-health check/i);
+  assert.match(decision.use_now, /coverage/i);
+  assert.match(decision.do_not_use, /hiring plan/i);
+  assert.match(decision.next_check, /denominator/i);
+});
+
 test('listing and employer weighting select the correct aggregate cell', () => {
   const listing = selectEvidence(release, { period: 'pilot-synthetic', provider: 'greenhouse', sector: 'technology', weighting: 'listings' });
   const breadth = selectEvidence(release, { period: 'pilot-synthetic', provider: 'greenhouse', sector: 'technology', weighting: 'employers' });
@@ -100,14 +108,41 @@ test('markup has semantic landmarks, labelled controls, live status, and methodo
   for (const control of ['period-filter', 'provider-filter', 'sector-filter', 'weighting-filter']) {
     assert.match(html, new RegExp(`<label[^>]+for=["']${control}`));
   }
+  for (const id of ['decision-brief', 'decision-status', 'decision-actions']) {
+    assert.match(html, new RegExp(`id=["']${id}`));
+  }
+  assert.ok(html.indexOf('id="decision-brief"') < html.indexOf('id="readout-grid"'));
   assert.match(html, /aria-live="polite"/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.doesNotMatch(html, /<script[^>]+src=["']https?:|<link[^>]+href=["']https?:/i);
 });
 
+
+test('reviewer feedback is a semantic work area after the engineering proof', async () => {
+  const html = await readFile(resolve(evidenceRoot, 'index.html'), 'utf8');
+  const css = await readFile(resolve(evidenceRoot, 'styles.css'), 'utf8');
+  for (const markup of [
+    '<section id="reviewer-feedback" aria-labelledby="feedback-title">',
+    '<form id="feedback-form">',
+    '<select id="feedback-target" required>',
+    '<select id="feedback-category" required>',
+    '<textarea id="feedback-comment" maxlength="2000" required>',
+    '<output id="feedback-characters" for="feedback-comment">',
+    '<div id="feedback-status" role="status" aria-live="polite">',
+    '<section id="moderation-queue" hidden>',
+  ]) assert.ok(html.includes(markup), markup);
+  assert.ok(html.indexOf('class="engineering-proof"') < html.indexOf('id="reviewer-feedback"'));
+  assert.ok(html.indexOf('id="reviewer-feedback"') < html.indexOf('id="methodology"'));
+  assert.match(html, /<script type="module" src="\.\/feedback\.bundle\.js"><\/script>/);
+  assert.match(css, /\.feedback-workspace/);
+});
+
 test('dashboard source has safe missing-data handling and no trend override', async () => {
   const source = await readFile(resolve(evidenceRoot, 'dashboard.mjs'), 'utf8');
   assert.match(source, /catch\s*\(/);
+  assert.match(source, /model\.decision/);
+  assert.match(source, /const meter = selected\.maximum/);
+  assert.doesNotMatch(source, /selected\.maximum\s*\?\s*selected\.rate\s*\*\s*100\s*:\s*100/);
   assert.match(source, /trend\.eligible/);
   assert.doesNotMatch(source, /trend\.eligible\s*=|localStorage|document\.cookie|fetch\(["']https?:/);
 });

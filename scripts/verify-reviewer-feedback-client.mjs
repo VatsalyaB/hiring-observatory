@@ -200,8 +200,10 @@ console.log('reviewer feedback client verification passed');
 class FakeElement {
   constructor(document, id = '') {
     this.document = document; this.id = id; this.children = []; this.hidden = false;
-    this.disabled = false; this.textContent = ''; this.value = ''; this.listeners = new Map();
+    this.disabled = false; this._textContent = ''; this.value = ''; this.listeners = new Map();
   }
+  get textContent() { return this._textContent + this.children.map((child) => child.textContent).join(''); }
+  set textContent(value) { this._textContent = String(value); this.children = []; }
   set innerHTML(_value) { throw new Error('feedback UI must not use innerHTML'); }
   append(...children) { for (const child of children) { child.parent = this; this.children.push(child); } }
   replaceChildren(...children) { this.children = []; this.append(...children); }
@@ -253,7 +255,16 @@ await bootFeedback({ document: ui.document, location: uiLocation, fetch: async (
 assert.equal(ui.nodes.get('feedback-form').hidden, false);
 assert.equal(ui.nodes.get('feedback-anonymous').hidden, true);
 assert.equal(ui.nodes.get('moderation-queue').hidden, true);
-assert.equal(ui.nodes.get('public-feedback-list').children[0].textContent.includes('<img src=x>'), true);
+const publicEntry = ui.nodes.get('public-feedback-list').children[0];
+assert.equal(publicEntry.className, 'feedback-row');
+assert.deepEqual(publicEntry.children.map((child) => child.className), [
+  'feedback-meta', 'feedback-tags', 'feedback-comment',
+]);
+assert.equal(publicEntry.children[0].children.length, 3);
+assert.deepEqual(publicEntry.children[0].children.map((child) => child.className), [
+  'feedback-reviewer', 'feedback-date', 'feedback-target',
+]);
+assert.equal(publicEntry.children[2].textContent, '<img src=x>');
 ui.nodes.get('feedback-target').value = 'project:hiring-observatory';
 ui.nodes.get('feedback-category').value = 'useful';
 ui.nodes.get('feedback-comment').value = 'Hello';
@@ -341,9 +352,9 @@ const moderationClient = {
 await bootFeedback({ document: moderationUi.document, location: uiLocation, fetch: async () => ({ ok: true, json: async () => targetRelease }), config: enabledConfig, client: moderationClient });
 await Promise.resolve();
 const moderationEntry = moderationUi.nodes.get('moderation-feedback-list').children[0];
-assert.match(moderationEntry.textContent, /claim.*release:claim.*2026-09-06.*reviewer.*evidence_concern.*Check the denominator/i);
+assert.match(moderationEntry.textContent, /reviewer.*2026-09-06.*claim.*release:claim.*evidence_concern.*Check the denominator/i);
 assert.doesNotMatch(moderationEntry.textContent, /undefined/);
-const [moderatorNote, approve, reject] = moderationEntry.children;
+const [moderatorNote, approve, reject] = moderationEntry.children.slice(-3);
 const deciding = approve.emit('click');
 await Promise.resolve();
 assert.equal(moderatorNote.disabled, true);
@@ -385,7 +396,7 @@ const beforeRetrySubmit = uiCalls.filter(([type]) => type === 'retry-submit').le
 await retryUi.nodes.get('feedback-form').emit('submit');
 assert.equal(uiCalls.filter(([type]) => type === 'retry-submit').length - beforeRetrySubmit, 1);
 
-assert.match(ui.nodes.get('public-feedback-list').children[0].textContent, /Target: project\/hiring-observatory.*Submitted: 2026-09-06.*Reviewer: @reviewer.*Category: useful.*Status: approved.*<img src=x>/);
+assert.match(ui.nodes.get('public-feedback-list').children[0].textContent, /Reviewer: @reviewer.*Submitted: 2026-09-06.*Target: project\/hiring-observatory.*Category: useful.*Status: approved.*<img src=x>/);
 
 const failedModerationUi = feedbackDom();
 const failedModerationClient = {
@@ -406,7 +417,7 @@ const failedModerationClient = {
 await bootFeedback({ document: failedModerationUi.document, location: uiLocation, fetch: async () => ({ ok: true, json: async () => targetRelease }), config: enabledConfig, client: failedModerationClient });
 await Promise.resolve();
 const failedEntry = failedModerationUi.nodes.get('moderation-feedback-list').children[0];
-const [, failedApprove, failedReject] = failedEntry.children;
+const [, failedApprove, failedReject] = failedEntry.children.slice(-3);
 failedReject.focus();
 await failedReject.emit('click');
 assert.equal(failedApprove.disabled, false);
@@ -456,7 +467,7 @@ const decisionGate=new Promise((_,reject)=>{rejectDecision=reject;});
 const decisionRaceClient={auth:{async getSession(){return {data:{session:{user:{}}},error:null};},async signOut(){return {error:null};},onAuthStateChange(listener){this.listener=listener;return {data:{subscription:{unsubscribe(){}}}};}},from(){return {select(){return Promise.resolve({data:[],error:null});}};},rpc(){return Promise.resolve({data:'id',error:null});},functions:{invoke(_name,options){return options.method==='GET'?Promise.resolve({data:{feedback:[{id:'8df6cebb-6810-4e00-9373-a7a1e8552894',github_login:'r',target_type:'project',target_key:'k',category:'useful',comment:'c',status:'pending',created_at:'2026-09-06T00:00:00Z'}]},error:null}):decisionGate;}}};
 await bootFeedback({document:decisionRaceUi.document,location:uiLocation,fetch:async()=>({ok:true,json:async()=>targetRelease}),config:enabledConfig,client:decisionRaceClient});
 await new Promise((resolve)=>setTimeout(resolve,0));
-const [,decisionApprove]=decisionRaceUi.nodes.get('moderation-feedback-list').children[0].children;
+const [,decisionApprove]=decisionRaceUi.nodes.get('moderation-feedback-list').children[0].children.slice(-3);
 const decisionClick=decisionApprove.emit('click'); await Promise.resolve();
 await decisionRaceUi.nodes.get('feedback-sign-out').emit('click'); rejectDecision(new Error('late decision failure')); await decisionClick;
 assert.equal(decisionRaceUi.nodes.get('moderation-queue').hidden,true);
@@ -506,7 +517,7 @@ const successfulDecisionRaceClient = {
 await bootFeedback({ document: successfulDecisionRaceUi.document, location: uiLocation, fetch: async () => ({ ok: true, json: async () => targetRelease }), config: enabledConfig, client: successfulDecisionRaceClient });
 await new Promise((resolve) => setTimeout(resolve, 0));
 const successfulDecisionEntry = successfulDecisionRaceUi.nodes.get('moderation-feedback-list').children[0];
-const [, successfulDecisionApprove, successfulDecisionReject] = successfulDecisionEntry.children;
+const [, successfulDecisionApprove, successfulDecisionReject] = successfulDecisionEntry.children.slice(-3);
 const successfulDecisionClick = successfulDecisionApprove.emit('click');
 await Promise.resolve();
 await successfulDecisionRaceUi.nodes.get('feedback-sign-out').emit('click');

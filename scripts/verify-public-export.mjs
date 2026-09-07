@@ -20,6 +20,7 @@ const REQUIRED_FEEDBACK_DESTINATIONS = [
   'docs/superpowers/specs/2026-09-06-authenticated-reviewer-feedback-design.md',
   'docs/superpowers/plans/2026-09-06-authenticated-reviewer-feedback.md',
   'supabase/migrations/202609060001_reviewer_feedback.sql',
+  'supabase/migrations/202609070001_public_grant.sql',
   'supabase/functions/moderate-feedback/policy.mjs',
   'supabase/functions/moderate-feedback/index.ts',
   'docs/evidence/feedback-config.mjs',

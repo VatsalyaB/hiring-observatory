@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { connectWithRetry, pgConfig } from './lib/verify.mjs';
 
 const migrationPath = resolve('supabase/migrations/202609060001_reviewer_feedback.sql');
+const repairMigrationPath = resolve('supabase/migrations/202609070001_public_grant.sql');
 let migration;
 try {
   migration = await readFile(migrationPath, 'utf8');
@@ -13,6 +14,7 @@ try {
   }
   throw error;
 }
+const repairMigration = await readFile(repairMigrationPath, 'utf8');
 
 const quoteIdentifier = (value) => `"${value.replaceAll('"', '""')}"`;
 const scratchDatabase = `reviewer_feedback_verify_${process.pid}_${Date.now()}`;
@@ -152,6 +154,19 @@ try {
   await owner.query('grant execute on function auth.uid() to anon, authenticated, service_role');
 
   await owner.query(migration);
+  await owner.query(`
+    revoke select (
+      github_login,
+      target_type,
+      target_key,
+      category,
+      comment,
+      status,
+      created_at,
+      moderated_at
+    ) on public.reviewer_feedback from anon, authenticated
+  `);
+  await owner.query(repairMigration);
   const { rows: browserGrantRows } = await owner.query(`
     select grantee, array_agg(column_name::text order by column_name)::text[] as columns
     from information_schema.column_privileges

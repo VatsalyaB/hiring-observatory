@@ -42,6 +42,7 @@
     { "source": "public/docs/evidence/model.mjs", "destination": "docs/evidence/model.mjs" },
     { "source": "public/docs/evidence/styles.css", "destination": "docs/evidence/styles.css" },
     { "source": "supabase/migrations/202609060001_reviewer_feedback.sql", "destination": "supabase/migrations/202609060001_reviewer_feedback.sql" },
+    { "source": "supabase/migrations/202609070001_public_grant.sql", "destination": "supabase/migrations/202609070001_public_grant.sql" },
     { "source": "supabase/functions/moderate-feedback/policy.mjs", "destination": "supabase/functions/moderate-feedback/policy.mjs" },
     { "source": "supabase/functions/moderate-feedback/index.ts", "destination": "supabase/functions/moderate-feedback/index.ts" },
     { "source": "scripts/build-feedback.mjs", "destination": "scripts/build-feedback.mjs" },
